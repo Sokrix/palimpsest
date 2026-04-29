@@ -65,7 +65,7 @@ Reads cross all layers. Writes are partitioned. The LLM cannot edit `raw/`. The 
 
 ## Lineage
 
-The 3-layer architecture (raw / wiki / schema) is from [Andrej Karpathy's LLM Wiki](https://karpathy.ai). palimpsest is that concept operationalized: seven slash commands, strict ownership rules baked in, a one-line installer, and a `/compile` daily note that captures the functional narrative of a session — context, exploration, convergence, learnings, blockers — not just a changelog of files.
+The 3-layer architecture (raw / wiki / schema) is from [Andrej Karpathy's LLM Wiki](https://karpathy.ai). palimpsest operationalizes it as a memory layer **decoupled from your workspace**: one vault at a fixed absolute path, accessible from any Claude Code session in any directory. Knowledge accumulates centrally instead of fragmenting per-project. On top of that: seven slash commands, strict ownership rules baked in, a one-line installer, and a `/compile` daily note that captures the functional narrative of a session — context, exploration, convergence, learnings, blockers — not just a changelog of files.
 
 ## Install
 
