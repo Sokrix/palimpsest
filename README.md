@@ -65,19 +65,7 @@ Reads cross all layers. Writes are partitioned. The LLM cannot edit `raw/`. The 
 
 ## Lineage
 
-palimpsest stands on three shoulders, and is open about it.
-
-- **[Andrej Karpathy's LLM Wiki](https://karpathy.ai)** — the 3-layer architecture (raw / wiki / schema) is his. The ownership rules, the LLM-as-curator framing, the index-as-steering-panel idea — all his. palimpsest is essentially Karpathy's concept, operationalized.
-- **The "second brain" tradition** — Tiago Forte's PKM movement, and behind it the much older practice of *hypomnemata*: the personal notebooks that ancient philosophers like Seneca kept for collecting and reflecting on what they read.
-- **Vannevar Bush's [memex](https://en.wikipedia.org/wiki/Memex)** (1945) — the original vision of a personal device that augments memory by linking documents associatively. The grandparent of every PKM tool, including this one.
-
-What palimpsest adds on top:
-
-- **Operationalized**, not theoretical. Karpathy describes the architecture; palimpsest is seven working slash commands with strict rules baked in, plus a one-line installer that bootstraps Obsidian + Claude Code together.
-- **A two-tier session capture**: `/save` for daily checkpoints, `/compile` for deep sessions that deserve canonicalization into topical notes.
-- **The daily note as a functional narrative**, not a changelog. It captures the *story* of the session — context, exploration, convergence, learnings, blockers — so a future session can reconstruct the *thinking*, not just the outcome.
-- **Strict idempotency.** The kit owns templates; you own knowledge. Reinstall safely: kit-owned files get backed up and rewritten, user-owned files (your wiki, your raw inputs, your index, your log) are never overwritten.
-- **Cross-session persistence** that works from any working directory. Skills use absolute paths, so the same vault is available whether you're in a code repo, a research project, or a one-off conversation.
+The 3-layer architecture (raw / wiki / schema) is from [Andrej Karpathy's LLM Wiki](https://karpathy.ai). palimpsest is that concept operationalized: seven slash commands, strict ownership rules baked in, a one-line installer, and a `/compile` daily note that captures the functional narrative of a session — context, exploration, convergence, learnings, blockers — not just a changelog of files.
 
 ## Install
 
