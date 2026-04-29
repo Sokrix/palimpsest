@@ -2,6 +2,33 @@
 
 Notable changes to palimpsest. Reinstall (`./install.sh --reinstall`) to pull in changes to kit-owned files.
 
+## 2026-04-29 (later still)
+
+### Layout — `Daily/` renamed `sessions/` and moved out of `wiki/`; `log.md` moved to vault root
+
+The `wiki/` folder now contains *only* canonized knowledge: the index plus the three topical buckets (Context, Intelligence, Resources). Two things that were artificially nested inside it have been pulled up:
+
+- **Session recaps**: `wiki/Daily/` → `sessions/` at the vault root. They sit alongside `raw/` as a sibling staging area — both feed `/ingest`. The new name reflects what they are (per-session recaps), not when they're written. The frontmatter `type: daily` becomes `type: session`, and `tags: [daily]` becomes `tags: [session]`.
+- **Operations log**: `wiki/log.md` → `log.md` at the vault root. It's audit metadata, not knowledge — it doesn't belong in the canonized layer.
+
+### Updated 3-layer architecture
+
+| Layer            | Path                                | Owner               | Rule                                                                 |
+| ---------------- | ----------------------------------- | ------------------- | -------------------------------------------------------------------- |
+| Layer 1 — Inputs | `<vault>/raw/`, `<vault>/sessions/` | Human / LLM staging | Two staging areas. Immutable external content + un-ingested recaps.  |
+| Layer 2 — Wiki   | `<vault>/wiki/`                     | LLM                 | Canonized knowledge. Topical notes + index only.                     |
+| Layer 3 — Schema | `~/.claude/CLAUDE.md`               | Human               | Rules, conventions, vault path.                                      |
+
+### Migration
+
+Running `./install.sh` (or `--reinstall`) on an existing install:
+
+- Moves any files from `<vault>/wiki/Daily/` to `<vault>/sessions/` and removes the empty legacy folder.
+- Moves `<vault>/wiki/log.md` to `<vault>/log.md` if the new location is absent.
+- Creates `sessions/` and the topical bucket folders explicitly (no longer relies on `wiki/Daily/`).
+
+`/save`, `/ingest`, `/prime`, `/lint`, `/query`, `/notebooklm` all updated to write/read from the new paths. `lint` now exempts `sessions/` from the orphan check (chronological, not part of the topical graph) and warns when the un-ingested session backlog grows beyond seven recaps.
+
 ## 2026-04-29 (later)
 
 ### Architecture — `/compile` merged into `/ingest`

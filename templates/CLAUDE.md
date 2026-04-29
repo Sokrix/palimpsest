@@ -8,53 +8,66 @@ The user maintains a palimpsest vault (Obsidian + Karpathy 3-layer LLM Wiki arch
 
 In skill files and below, `<vault>` is shorthand for this absolute path.
 
-This vault is the user's persistent memory — decisions, research, projects, patterns, daily logs. Consult it when relevant. It is accessible from any Claude Code session via the global skills (`/prime`, `/save`, `/ingest`, `/query`, `/lint`, `/notebooklm`).
+This vault is the user's persistent memory — decisions, research, projects, patterns, session recaps. Consult it when relevant. It is accessible from any Claude Code session via the global skills (`/prime`, `/save`, `/ingest`, `/query`, `/lint`, `/notebooklm`).
 
 ### Absolute rules (always)
 
 1. NEVER modify, rename or move a file in `<vault>/raw/` — it is the human space, immutable
 2. NEVER create an orphan note in `<vault>/wiki/{Context,Intelligence,Resources}/` — every topical note has at least one incoming or outgoing wiki link
-3. NEVER write in the vault outside a skill — direct edits to `<vault>/raw/` or `<vault>/wiki/` are forbidden, even when explicitly asked. Route every write through `/save`, `/ingest`, or `/notebooklm`.
+3. NEVER write in the vault outside a skill — direct edits to `<vault>/raw/`, `<vault>/sessions/`, or `<vault>/wiki/` are forbidden, even when explicitly asked. Route every write through `/save`, `/ingest`, or `/notebooklm`.
 4. NEVER delete a wiki note — archive by changing `status: archive`
 5. NEVER invent information that is absent from the vault — flag when data is missing
 
+### Vault layout
+
+```
+<vault>/
+├── raw/         # external artifacts dropped by the human (immutable)
+├── sessions/    # session recaps written by /save (staging for /ingest)
+├── log.md       # append-only operations journal
+└── wiki/        # canonized knowledge — the only durable layer
+    ├── index.md # steering panel listing topical notes by bucket
+    ├── Context/
+    ├── Intelligence/
+    └── Resources/
+```
+
 ### 3-layer architecture (Karpathy LLM Wiki)
 
-| Layer            | Path                              | Owner | Rule                                                |
-| ---------------- | --------------------------------- | ----- | --------------------------------------------------- |
-| Layer 1 — Raw    | `<vault>/raw/`                    | Human | Immutable. External artifacts (clippings, docs, notes). |
-| Layer 2 — Wiki   | `<vault>/wiki/`                   | LLM   | Compiled. Concepts, syntheses, index, log.          |
-| Layer 3 — Schema | `~/.claude/CLAUDE.md` (this file) | Human | Rules, conventions, vault path.                     |
+| Layer            | Path                                       | Owner | Rule                                                                           |
+| ---------------- | ------------------------------------------ | ----- | ------------------------------------------------------------------------------ |
+| Layer 1 — Inputs | `<vault>/raw/`, `<vault>/sessions/`        | Human / LLM staging | Two staging areas. `raw/` is immutable external content; `sessions/` is `/save`'s output, awaiting ingestion. |
+| Layer 2 — Wiki   | `<vault>/wiki/`                            | LLM   | Canonized knowledge. Topical notes + index. The LLM owns quality.              |
+| Layer 3 — Schema | `~/.claude/CLAUDE.md` (this file)          | Human | Rules, conventions, vault path.                                                |
+
+`log.md` lives at the vault root because it's audit metadata, not knowledge.
 
 ### How it works
 
 - **`<vault>/raw/`** — the human dumps external content here (articles, PDFs, notes). The LLM reads but NEVER touches.
-- **`<vault>/wiki/`** — compiled knowledge: topical notes, daily journal, index, log. The LLM is responsible for quality.
+- **`<vault>/sessions/`** — `/save` writes a per-session human-readable recap here at the end of every working session. Each file carries an `ingested:` flag flipped to a timestamp once `/ingest` has promoted its durable bits.
+- **`<vault>/wiki/`** — the canonized knowledge layer. Topical notes only.
 - **`<vault>/wiki/index.md`** — steering panel. The LLM reads this FIRST to navigate the wiki without scanning every folder.
-- **`<vault>/wiki/log.md`** — append-only chronological journal. Every operation adds an entry.
+- **`<vault>/log.md`** — append-only chronological journal of vault operations. Every skill invocation adds an entry.
 
-Two staging areas feed the topical notes:
-- `<vault>/raw/` — external artifacts dropped by the human
-- `<vault>/wiki/Daily/` — session recaps written by `/save`
-
-`/ingest` canonicalizes both into the topical buckets (Context, Intelligence, Resources).
+`/ingest` canonicalizes content from both staging areas (`raw/` and `sessions/`) into the topical buckets.
 
 ### Available operations
 
-| Command       | Role                                                                         | When to use it                                                              |
-| ------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `/prime`      | Load vault context at the start of a session                                 | Start of any session that will work with the vault                          |
-| `/save`       | Capture the current session as a human-readable daily recap                  | End of every session                                                        |
-| `/ingest`     | Canonicalize durable content from `raw/` and `Daily/` into the topical buckets | After dropping files in `raw/`, or when accumulated dailies deserve promotion |
-| `/query`      | Deep search across the wiki                                                  | To find information in the vault                                            |
-| `/lint`       | Health-check of the vault                                                    | Periodically (1x/week recommended)                                          |
-| `/notebooklm` | Vault → NotebookLM → multimedia deliverable                                  | To generate podcasts, mindmaps, guides from the wiki                        |
+| Command       | Role                                                                            | When to use it                                                              |
+| ------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `/prime`      | Load vault context at the start of a session                                    | Start of any session that will work with the vault                          |
+| `/save`       | Capture the current session as a human-readable recap                           | End of every session                                                        |
+| `/ingest`     | Canonicalize durable content from `raw/` and `sessions/` into the topical buckets | After dropping files in `raw/`, or when accumulated sessions deserve promotion |
+| `/query`      | Deep search across the wiki                                                     | To find information in the vault                                            |
+| `/lint`       | Health-check of the vault                                                       | Periodically (1x/week recommended)                                          |
+| `/notebooklm` | Vault → NotebookLM → multimedia deliverable                                     | To generate podcasts, mindmaps, guides from the wiki                        |
 
 `/save` and `/ingest` are complementary, not alternatives:
 - `/save` runs every session — it captures what happened.
-- `/ingest` runs when you want durable knowledge promoted into Context/Intelligence/Resources, whether the source is `raw/` or accumulated dailies.
+- `/ingest` runs when you want durable knowledge promoted into Context/Intelligence/Resources, whether the source is `raw/` or accumulated session recaps.
 
-You can run several `/save`s before a single `/ingest`. Dailies are tracked with an `ingested:` frontmatter field so `/ingest` only processes new ones.
+You can run several `/save`s before a single `/ingest`. Session files are tracked with an `ingested:` frontmatter field so `/ingest` only processes new ones.
 
 ### Obsidian conventions
 
@@ -66,7 +79,7 @@ You can run several `/save`s before a single `/ingest`. Dailies are tracked with
 ---
 date: YYYY-MM-DD
 tags: []
-type: context | intelligence | resource | daily
+type: context | intelligence | resource | session
 status: active | archive
 ---
 ```
@@ -116,13 +129,13 @@ Self-contained artifacts, ready to grab.
 - **Pattern we discovered** → `Resources` (the pattern), with a link to `Intelligence` if the analysis is worth keeping
 - **Note fitting nowhere** → ask the user before writing
 
-#### Non-bucket folders
+#### Non-bucket folders and files
 
-| Folder                  | Content                                                                                  |
+| Path                    | Content                                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------------------- |
-| `<vault>/wiki/Daily/`   | Per-session recaps written by `/save`. Chronological, not classified — staging for `/ingest`. |
+| `<vault>/sessions/`     | Per-session recaps written by `/save`. Chronological, not classified — staging for `/ingest`. |
 | `<vault>/wiki/index.md` | Steering panel listing topical notes by bucket.                                          |
-| `<vault>/wiki/log.md`   | Append-only operations log.                                                              |
+| `<vault>/log.md`        | Append-only operations journal at the vault root (audit metadata, not knowledge).        |
 
 Folders are created as needed. NEVER create an empty folder.
 
@@ -130,4 +143,4 @@ Folders are created as needed. NEVER create an empty folder.
 
 The skills work from any Claude Code session via the absolute paths above. You do not need to `cd` into the vault directory to invoke them.
 
-If a session in another workspace produces wiki-worthy content, capture it via `/save` (it lands in `Daily/`) and let `/ingest` promote the durable bits later. `<vault>/raw/` is reserved for external artifacts (articles, PDFs, notes), not session output.
+If a session in another workspace produces wiki-worthy content, capture it via `/save` (it lands in `sessions/`) and let `/ingest` promote the durable bits later. `<vault>/raw/` is reserved for external artifacts (articles, PDFs, notes), not session output.

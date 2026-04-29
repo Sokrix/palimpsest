@@ -187,8 +187,28 @@ read -rp "Proceed? [y/N] " confirm
 
 # ── Vault structure ─────────────────────────────────────────────────────
 hdr "Creating vault structure"
-run "mkdir -p \"$VAULT_PATH/raw/clippings\" \"$VAULT_PATH/raw/docs\" \"$VAULT_PATH/raw/notes\" \"$VAULT_PATH/wiki/Daily\""
+run "mkdir -p \"$VAULT_PATH/raw/clippings\" \"$VAULT_PATH/raw/docs\" \"$VAULT_PATH/raw/notes\" \"$VAULT_PATH/sessions\" \"$VAULT_PATH/wiki/Context\" \"$VAULT_PATH/wiki/Intelligence\" \"$VAULT_PATH/wiki/Resources\""
 ok "Folders created"
+
+# Migration: legacy layout placed Daily/ inside wiki/. With sessions/ at the
+# vault root, the old folder is no longer used. Move surviving files into the
+# new sessions/ directory and remove the empty parent.
+LEGACY_DAILY="$VAULT_PATH/wiki/Daily"
+if [ -d "$LEGACY_DAILY" ]; then
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "  [dry-run] migrate $LEGACY_DAILY/* → $VAULT_PATH/sessions/ then rmdir"
+  else
+    shopt -s nullglob
+    moved=0
+    for f in "$LEGACY_DAILY"/*; do
+      mv "$f" "$VAULT_PATH/sessions/"
+      moved=$((moved + 1))
+    done
+    shopt -u nullglob
+    rmdir "$LEGACY_DAILY" 2>/dev/null || true
+    [ "$moved" -gt 0 ] && warn "Migrated $moved legacy daily file(s) → sessions/"
+  fi
+fi
 
 # ── Seed wiki files ─────────────────────────────────────────────────────
 # These are User-owned: never overwrite if present, even on --reinstall.
@@ -203,21 +223,32 @@ else
   warn "wiki/index.md already exists — left as-is (User-owned)"
 fi
 
-if [ ! -f "$VAULT_PATH/wiki/log.md" ]; then
+# log.md lives at the vault root. Migrate it from wiki/log.md if present.
+LEGACY_LOG="$VAULT_PATH/wiki/log.md"
+if [ -f "$LEGACY_LOG" ] && [ ! -f "$VAULT_PATH/log.md" ]; then
   if [ "$DRY_RUN" -eq 1 ]; then
-    echo "  [dry-run] write $VAULT_PATH/wiki/log.md (with substitutions)"
+    echo "  [dry-run] migrate $LEGACY_LOG → $VAULT_PATH/log.md"
   else
-    render "$REPO_DIR/templates/vault/wiki/log.md" > "$VAULT_PATH/wiki/log.md"
+    mv "$LEGACY_LOG" "$VAULT_PATH/log.md"
   fi
-  ok "Seeded wiki/log.md"
+  warn "Migrated wiki/log.md → log.md (vault root)"
+fi
+
+if [ ! -f "$VAULT_PATH/log.md" ]; then
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "  [dry-run] write $VAULT_PATH/log.md (with substitutions)"
+  else
+    render "$REPO_DIR/templates/vault/log.md" > "$VAULT_PATH/log.md"
+  fi
+  ok "Seeded log.md"
 else
   # Append a re-init entry; never overwrite the log (User-owned, append-only)
   if [ "$DRY_RUN" -eq 1 ]; then
-    echo "  [dry-run] append re-init entry to $VAULT_PATH/wiki/log.md"
+    echo "  [dry-run] append re-init entry to $VAULT_PATH/log.md"
   else
-    printf "%s %s — Init: palimpsest re-run (paths refreshed)\n" "$INIT_DATE" "$INIT_TIME" >> "$VAULT_PATH/wiki/log.md"
+    printf "%s %s — Init: palimpsest re-run (paths refreshed)\n" "$INIT_DATE" "$INIT_TIME" >> "$VAULT_PATH/log.md"
   fi
-  warn "wiki/log.md exists — appended re-init entry"
+  warn "log.md exists — appended re-init entry"
 fi
 
 # ── Install skills ──────────────────────────────────────────────────────
@@ -376,8 +407,8 @@ cat <<DONE
 
   Slash commands available globally from any Claude Code session:
     /prime       Load vault context
-    /save        End-of-session human-readable recap (writes to Daily/)
-    /ingest      Canonicalize raw/ + Daily/ into Context / Intelligence / Resources
+    /save        End-of-session human-readable recap (writes to sessions/)
+    /ingest      Canonicalize raw/ + sessions/ into Context / Intelligence / Resources
     /query       Search the wiki
     /lint        Health check
     /notebooklm  Generate multimedia from wiki

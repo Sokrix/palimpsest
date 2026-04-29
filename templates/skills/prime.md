@@ -9,14 +9,14 @@ The global vault rules and schema are loaded automatically from `~/.claude/CLAUD
 ## Steps
 
 1. **Read `<vault>/wiki/index.md`** — the wiki's steering panel.
-2. **Read the latest daily note** in `<vault>/wiki/Daily/` — the summary of the previous session.
+2. **Read the latest session recap** in `<vault>/sessions/` — the summary of the previous session.
 
 ## Expected output
 
 Confirm what was loaded by summarizing:
 
 - Number of categories populated in the index
-- Last daily note read (date)
+- Last session recap read (date)
 - Key points from the previous session
 
 ## Rules

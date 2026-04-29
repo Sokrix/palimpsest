@@ -12,13 +12,15 @@ palimpsest sits between the two. Claude reads and writes your vault according to
 
 ## Architecture
 
-Three layers, three owners, three rules.
+Three layers, three owners.
 
 | Layer | Path | Owner | Rule |
 | --- | --- | --- | --- |
-| **Raw** | `<vault>/raw/` | Human | Immutable. Drop articles, PDFs, notes here. The LLM reads but never touches. |
-| **Wiki** | `<vault>/wiki/` | LLM | Compiled. Concepts, syntheses, daily notes. The LLM owns quality. |
+| **Inputs** | `<vault>/raw/`, `<vault>/sessions/` | Human / LLM staging | Two staging areas. `raw/` is immutable external content (articles, PDFs, notes the human drops in). `sessions/` is `/save`'s output, awaiting ingestion. |
+| **Wiki** | `<vault>/wiki/` | LLM | Canonized knowledge. Topical notes only. The LLM owns quality. |
 | **Schema** | `~/.claude/CLAUDE.md` | Human | The rules, conventions, and vault path. |
+
+`<vault>/log.md` lives at the vault root because it is audit metadata (operations journal), not knowledge.
 
 Reads cross all layers. Writes are partitioned. The LLM cannot edit `raw/`. The human shouldn't edit `wiki/` directly — every change is routed through a slash command so the LLM can keep the index, log, and links coherent.
 
@@ -35,15 +37,15 @@ Reads cross all layers. Writes are partitioned. The LLM cannot edit `raw/`. The 
 
 3. Have a deep working session — explore options, make decisions
    └─ /save
-      Claude writes a human-readable daily recap covering
+      Claude writes a human-readable session recap covering
       context, goals, process, blockers, decisions, learnings.
-      The daily lands in wiki/Daily/ flagged as not-yet-ingested.
+      The recap lands in sessions/ flagged as not-yet-ingested.
 
 4. After a few sessions, when durable knowledge has accumulated
    └─ /ingest
-      Claude scans raw/ and the un-ingested dailies, proposes a
-      promotion plan, and (after your OK) canonicalizes the
-      durable bits into Context / Intelligence / Resources.
+      Claude scans raw/ and the un-ingested session recaps,
+      proposes a promotion plan, and (after your OK) canonicalizes
+      the durable bits into Context / Intelligence / Resources.
 
 5. A week later, in a different project
    └─ /query "how did we decide on X?"
@@ -100,17 +102,17 @@ The installer:
 
 ```
 <vault>/
-├── raw/                    # human-only input layer (immutable)
+├── raw/                    # external artifacts (immutable, human-only)
 │   ├── clippings/
 │   ├── docs/
 │   └── notes/
-└── wiki/                   # LLM-managed compiled layer
+├── sessions/               # session recaps written by /save (staging for /ingest)
+├── log.md                  # append-only operations journal (audit metadata)
+└── wiki/                   # canonized knowledge (LLM-managed)
     ├── index.md            # steering panel
-    ├── log.md              # append-only operations journal
     ├── Context/            # who/what/where notes
     ├── Intelligence/       # decisions, research, analyses
-    ├── Resources/          # patterns, templates, snippets
-    └── Daily/              # daily notes
+    └── Resources/          # patterns, templates, snippets
 ```
 
 ## Idempotency
@@ -123,8 +125,10 @@ Run the installer twice and nothing breaks.
 | `~/.claude/CLAUDE.md` (with `## palimpsest` marker, or legacy `## Second Brain vault`) | Kit | Skip; `--reinstall` strips and re-appends |
 | `~/.claude/CLAUDE.md` (without marker) | User | Append once, never overwrite |
 | `<vault>/wiki/index.md` | User | Never touch |
-| `<vault>/wiki/log.md` | User | Append re-init entry only |
+| `<vault>/log.md` | User | Append re-init entry only |
 | `<vault>/raw/**` | User | Never touch |
+| `<vault>/sessions/**` | User | Never touch |
+| Legacy `<vault>/wiki/Daily/` and `<vault>/wiki/log.md` | Kit migration | Migrated to `sessions/` and `log.md` at the root, then the legacy paths are removed |
 
 Backups go to `~/.claude/backups/palimpsest/<timestamp>/`.
 
@@ -151,9 +155,10 @@ palimpsest/
     │   ├── query.md
     │   ├── lint.md
     │   └── notebooklm.md
-    └── vault/wiki/
-        ├── index.md                 # seed (only written if absent)
-        └── log.md                   # seed (only written if absent)
+    └── vault/
+        ├── log.md                   # seed for <vault>/log.md (only written if absent)
+        └── wiki/
+            └── index.md             # seed for <vault>/wiki/index.md (only written if absent)
 ```
 
 Templates use two placeholders rendered by `sed` at install time: `{{VAULT_PATH}}` (the absolute vault path) and `{{INIT_DATE}}` / `{{INIT_TIME}}` (used in the seed log/index).

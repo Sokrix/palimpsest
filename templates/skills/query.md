@@ -27,7 +27,7 @@ If the search produces a useful new synthesis (cross-referencing several notes, 
 
 ### 5. Write to the log
 
-Append to `<vault>/wiki/log.md`:
+Append to `<vault>/log.md`:
 
 ```
 YYYY-MM-DD HH:MM — Query: "question asked" → wiki/path/note.md

@@ -1,6 +1,6 @@
-# Ingest — Canonicalize raw/ and Daily/ into the topical buckets
+# Ingest — Canonicalize raw/ and sessions/ into the topical buckets
 
-Promotes durable content from the two staging areas — `<vault>/raw/` (external artifacts) and `<vault>/wiki/Daily/` (session recaps written by `/save`) — into the three topical buckets: `Context/`, `Intelligence/`, `Resources/`.
+Promotes durable content from the two staging areas — `<vault>/raw/` (external artifacts) and `<vault>/sessions/` (session recaps written by `/save`) — into the three topical buckets: `Context/`, `Intelligence/`, `Resources/`.
 
 > `<vault>` = `{{VAULT_PATH}}`
 
@@ -20,9 +20,9 @@ For each raw file, check whether a wiki note already references it via `source:`
 - Already referenced and unchanged → skip
 - New or modified → process
 
-**`<vault>/wiki/Daily/`**: list daily notes.
+**`<vault>/sessions/`**: list session recaps.
 
-For each daily, check the `ingested:` frontmatter field.
+For each session file, check the `ingested:` frontmatter field.
 - `ingested:` is a timestamp (already processed) → skip
 - `ingested: false` (or missing) → process
 
@@ -37,8 +37,8 @@ Before writing anything, summarize what's pending:
 - raw/clippings/<file>.md — <one-line gist>
 - raw/docs/<file>.pdf — <one-line gist>
 
-### From Daily/
-- Daily/YYYY-MM-DD.md — <one-line gist of the session>
+### From sessions/
+- sessions/YYYY-MM-DD.md — <one-line gist of the session>
 ```
 
 If nothing is pending in either source, stop here and say so.
@@ -58,7 +58,7 @@ For each pending source, classify the durable content into the three buckets usi
 - Resources/<existing-note>.md — <what's being added> ← from <source>
 
 ### Skipped (no durable content)
-- Daily/YYYY-MM-DD.md — purely procedural session, nothing to promote
+- sessions/YYYY-MM-DD.md — purely procedural session, nothing to promote
 ```
 
 Wait for explicit user validation before writing. NEVER write topical notes without the user's OK.
@@ -73,12 +73,12 @@ date: YYYY-MM-DD
 tags: []
 type: context | intelligence | resource
 status: active
-source: raw/path/of/file.md          # if from raw/
-sources: [Daily/YYYY-MM-DD.md, ...]  # if from one or more dailies
+source: raw/path/of/file.md             # if from raw/
+sources: [sessions/YYYY-MM-DD.md, ...]  # if from one or more session recaps
 ---
 ```
 
-A note may carry both `source:` and `sources:` if it's enriched from both kinds of staging area over time. Use a list (`sources:`) for daily notes since several may feed the same topical note.
+A note may carry both `source:` and `sources:` if it's enriched from both kinds of staging area over time. Use a list (`sources:`) for session files since several may feed the same topical note.
 
 Note content structure:
 
@@ -95,26 +95,26 @@ For every note created or enriched, add `[[wiki links]]` to related existing not
 
 ### 7. Update the index
 
-Register each new topical note in `<vault>/wiki/index.md` under its bucket. Don't index daily notes — they're chronological, not topical.
+Register each new topical note in `<vault>/wiki/index.md` under its bucket. Don't index session files — they're chronological, not topical.
 
 ### 8. Mark sources as ingested
 
-**Daily notes**: update the `ingested:` frontmatter field to today's timestamp:
+**Session files**: update the `ingested:` frontmatter field to today's timestamp:
 
 ```yaml
 ingested: YYYY-MM-DD HH:MM
 ```
 
-This is the only modification to a daily note allowed outside `/save`. Do not touch the body.
+This is the only modification to a session file allowed outside `/save`. Do not touch the body.
 
 **Raw files**: do nothing — `raw/` is immutable. The link is tracked via the `source:` field on the topical note.
 
 ### 9. Write to the log
 
-Append to `<vault>/wiki/log.md`:
+Append to `<vault>/log.md`:
 
 ```
-YYYY-MM-DD HH:MM — Ingest: R raw + D dailies processed, N notes created, M enriched
+YYYY-MM-DD HH:MM — Ingest: R raw + S sessions processed, N notes created, M enriched
 ```
 
 ### 10. Report
@@ -123,7 +123,7 @@ YYYY-MM-DD HH:MM — Ingest: R raw + D dailies processed, N notes created, M enr
 ## Ingest complete
 
 - raw/ scanned: X (Y processed, Z skipped)
-- Daily/ scanned: X (Y processed, Z skipped)
+- sessions/ scanned: X (Y processed, Z skipped)
 - Topical notes created: N (list with paths)
 - Topical notes enriched: M (list with paths)
 - Index updated: yes/no
@@ -134,7 +134,7 @@ YYYY-MM-DD HH:MM — Ingest: R raw + D dailies processed, N notes created, M enr
 
 - NEVER write topical notes without explicit validation of the promotion plan
 - NEVER modify, rename, or move a file in `<vault>/raw/`
-- NEVER modify the body of a daily note — only the `ingested:` frontmatter field is allowed
+- NEVER modify the body of a session file — only the `ingested:` frontmatter field is allowed
 - NEVER create a superficial note — if a source brings nothing durable, skip it (and say so in the plan)
 - NEVER create an orphan note — every topical note must link or be linked
 - Prefer enriching an existing note over creating a duplicate
