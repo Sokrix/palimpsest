@@ -583,8 +583,6 @@ fi
 # grant FDA from a script (TCC DB is SIP-protected); the best we can do is
 # detect, explain, and deep-link to the right Settings pane.
 
-hdr "Checking Full Disk Access (vault writability)"
-
 detect_terminal_host() {
   # Walk up the process tree until we hit a known terminal app. The immediate
   # parent is usually the shell (zsh/bash), not the terminal itself. We look
@@ -630,17 +628,30 @@ except Exception:
 PYEOF
 }
 
-if [ "$DRY_RUN" -eq 1 ]; then
-  warn "Skipped FDA probe (dry-run)"
-elif [ ! -f "$VAULT_PATH/log.md" ]; then
-  warn "Skipped FDA probe (log.md not yet created)"
-else
-  if probe_vault_write; then
-    ok "Vault is writable from this terminal"
+# Only run the probe when the vault sits under a TCC-protected location.
+# A vault at ~/Documents/palimpsest doesn't need FDA — checking it would
+# only add noise to the install output.
+case "$VAULT_PATH" in
+  "$HOME/Library/Mobile Documents/"*|"$HOME/Library/CloudStorage/"*)
+    NEEDS_FDA_PROBE=1 ;;
+  *)
+    NEEDS_FDA_PROBE=0 ;;
+esac
+
+if [ "$NEEDS_FDA_PROBE" -eq 1 ]; then
+  hdr "Checking Full Disk Access (vault writability)"
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    warn "Skipped FDA probe (dry-run)"
+  elif [ ! -f "$VAULT_PATH/log.md" ]; then
+    warn "Skipped FDA probe (log.md not yet created)"
   else
-    TERMINAL_HOST=$(detect_terminal_host)
-    err "Cannot modify $VAULT_PATH/log.md — Full Disk Access is missing."
-    cat <<FDA
+    if probe_vault_write; then
+      ok "Vault is writable from this terminal"
+    else
+      TERMINAL_HOST=$(detect_terminal_host)
+      err "Cannot modify $VAULT_PATH/log.md — Full Disk Access is missing."
+      cat <<FDA
 
   Your vault is under iCloud Drive, which macOS protects via TCC.
   Creating new files works, but appending to existing ones (like log.md)
@@ -656,14 +667,15 @@ else
     3. Quit and relaunch $TERMINAL_HOST (TCC only re-evaluates on launch)
 
 FDA
-    read -rp "Open the Full Disk Access settings pane now? [y/N] " yn
-    if [[ "$yn" =~ ^[Yy] ]]; then
-      # Ventura+ deep-link first; fall back to the legacy URL on older macOS.
-      open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension" 2>/dev/null \
-        || open "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles" 2>/dev/null \
-        || warn "Could not open Settings automatically — navigate there manually."
+      read -rp "Open the Full Disk Access settings pane now? [y/N] " yn
+      if [[ "$yn" =~ ^[Yy] ]]; then
+        # Ventura+ deep-link first; fall back to the legacy URL on older macOS.
+        open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension" 2>/dev/null \
+          || open "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles" 2>/dev/null \
+          || warn "Could not open Settings automatically — navigate there manually."
+      fi
+      warn "Continuing — install itself is fine. Re-run /save once FDA is granted."
     fi
-    warn "Continuing — install itself is fine. Re-run /save once FDA is granted."
   fi
 fi
 
