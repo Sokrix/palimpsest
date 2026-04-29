@@ -1,3 +1,8 @@
+---
+mode: agent
+description: 'Lint — Vault health-check'
+---
+
 # Lint — Vault health-check
 
 Verifies the integrity and consistency of the vault. To be run periodically (1x/week recommended).

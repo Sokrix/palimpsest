@@ -1,3 +1,8 @@
+---
+mode: agent
+description: 'Save — End-of-session human-readable recap'
+---
+
 # Save — Session recap
 
 Captures the current session as a human-readable session recap. Run at the end of every session. Pair with `/ingest` later when accumulated session recaps deserve promotion to topical notes.

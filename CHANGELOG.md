@@ -2,6 +2,42 @@
 
 Notable changes to palimpsest. Reinstall (`./install.sh --reinstall`) to pull in changes to kit-owned files.
 
+## 2026-04-30 — Multi-agent: palimpsest now installs for Claude Code and/or GitHub Copilot (VS Code)
+
+The same six commands (`/prime`, `/save`, `/ingest`, `/query`, `/lint`, `/notebooklm`) are now available in **GitHub Copilot Chat in VS Code**, in addition to Claude Code. Both agents target the **same vault** at the **same path**, with the **same rules** — only the surface changes. The vault stays the single source of truth.
+
+### What's new
+
+- New install target: GitHub Copilot (VS Code). The installer now asks up front:
+  ```
+  Setup target?
+    [1] Claude Code only
+    [2] GitHub Copilot (VS Code) only
+    [3] Both (recommended)
+  ```
+  Or use `--target=claude|copilot|both` to skip the prompt.
+- New templates:
+  - `templates/copilot/instructions/palimpsest.instructions.md` — schema with `applyTo: '**'`, auto-loaded into every Copilot chat. Mirrors `templates/CLAUDE.md`.
+  - `templates/copilot/prompts/{prime,save,ingest,query,lint,notebooklm}.prompt.md` — six prompt files mapping to slash commands. Bodies match the Claude Code skills.
+- New install paths:
+  - `~/.copilot/instructions/palimpsest.instructions.md`
+  - `~/.copilot/prompts/<name>.prompt.md`
+- VS Code user `settings.json` is updated to register both folders via `chat.promptFilesLocations` and `chat.instructionsFilesLocations`. If the file is JSONC (comments / trailing commas), the installer prints the snippet to paste manually rather than corrupting the file.
+
+### Architecture: schema layer is now per-agent (same content)
+
+| Layer            | Path                                                                                  | Owner | Rule                                                                |
+| ---------------- | ------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------- |
+| Layer 1 — Inputs | `<vault>/raw/`, `<vault>/sessions/`                                                   | Human / LLM staging | Two staging areas. Same as before.                          |
+| Layer 2 — Wiki   | `<vault>/wiki/`                                                                       | LLM   | Canonized knowledge. Same as before.                                |
+| Layer 3 — Schema | `~/.claude/CLAUDE.md` and/or `~/.copilot/instructions/palimpsest.instructions.md`     | Human | Rules, conventions, vault path. Both files carry the same content.  |
+
+### Idempotence and safety
+
+- `--target=claude` does not touch `~/.copilot/`. `--target=copilot` does not touch `~/.claude/commands/`.
+- Re-running without `--reinstall` reports unchanged files as "skipped".
+- Backups land in `~/.claude/backups/palimpsest/<timestamp>/`, with a `copilot/` subfolder for Copilot-side files.
+
 ## 2026-04-29 (later still)
 
 ### Layout — `Daily/` renamed `sessions/` and moved out of `wiki/`; `log.md` moved to vault root

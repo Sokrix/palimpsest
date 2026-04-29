@@ -1,3 +1,8 @@
+---
+applyTo: '**'
+description: 'palimpsest schema — vault rules, layout, bucket rubric'
+---
+
 ## palimpsest
 
 The user maintains a palimpsest vault (Obsidian + Karpathy 3-layer LLM Wiki architecture) at:
@@ -8,7 +13,7 @@ The user maintains a palimpsest vault (Obsidian + Karpathy 3-layer LLM Wiki arch
 
 In skill files and below, `<vault>` is shorthand for this absolute path.
 
-This vault is the user's persistent memory — decisions, research, projects, patterns, session recaps. Consult it when relevant. It is accessible from any Claude Code session via the global skills (`/prime`, `/save`, `/ingest`, `/query`, `/lint`, `/notebooklm`).
+This vault is the user's persistent memory — decisions, research, projects, patterns, session recaps. Consult it when relevant. It is accessible from any session via the global skills (`/prime`, `/save`, `/ingest`, `/query`, `/lint`, `/notebooklm`).
 
 ### Absolute rules (always)
 
@@ -34,11 +39,11 @@ This vault is the user's persistent memory — decisions, research, projects, pa
 
 ### 3-layer architecture (Karpathy LLM Wiki)
 
-| Layer            | Path                                       | Owner | Rule                                                                           |
-| ---------------- | ------------------------------------------ | ----- | ------------------------------------------------------------------------------ |
-| Layer 1 — Inputs | `<vault>/raw/`, `<vault>/sessions/`        | Human / LLM staging | Two staging areas. `raw/` is immutable external content; `sessions/` is `/save`'s output, awaiting ingestion. |
-| Layer 2 — Wiki   | `<vault>/wiki/`                            | LLM   | Canonized knowledge. Topical notes + index. The LLM owns quality.              |
-| Layer 3 — Schema | `~/.claude/CLAUDE.md` (this file)          | Human | Rules, conventions, vault path.                                                |
+| Layer            | Path                                                     | Owner | Rule                                                                           |
+| ---------------- | -------------------------------------------------------- | ----- | ------------------------------------------------------------------------------ |
+| Layer 1 — Inputs | `<vault>/raw/`, `<vault>/sessions/`                      | Human / LLM staging | Two staging areas. `raw/` is immutable external content; `sessions/` is `/save`'s output, awaiting ingestion. |
+| Layer 2 — Wiki   | `<vault>/wiki/`                                          | LLM   | Canonized knowledge. Topical notes + index. The LLM owns quality.              |
+| Layer 3 — Schema | `~/.copilot/instructions/palimpsest.instructions.md` (this file) | Human | Rules, conventions, vault path.                                        |
 
 `log.md` lives at the vault root because it's audit metadata, not knowledge.
 
@@ -141,6 +146,6 @@ Folders are created as needed. NEVER create an empty folder.
 
 ### Working from outside the vault
 
-The skills work from any Claude Code session via the absolute paths above. You do not need to `cd` into the vault directory to invoke them. The same six commands are also available in GitHub Copilot (VS Code) — both agents write to the same vault following the same rules.
+The skills work from any session via the absolute paths above. You do not need to `cd` into the vault directory to invoke them. The same six commands are available in Claude Code and in GitHub Copilot (VS Code), and both write to the same vault following the same rules.
 
 If a session in another workspace produces wiki-worthy content, capture it via `/save` (it lands in `sessions/`) and let `/ingest` promote the durable bits later. `<vault>/raw/` is reserved for external artifacts (articles, PDFs, notes), not session output.

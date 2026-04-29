@@ -1,14 +1,14 @@
 # palimpsest
 
-> A persistent memory layer for Claude Code, built on Obsidian.
+> A persistent memory layer for Claude Code and GitHub Copilot (VS Code), built on Obsidian.
 
 A *palimpsest* is a manuscript scraped clean and reused, with traces of the older writing still showing through the new. That's how this kit treats your knowledge: a raw layer of inputs that is never erased, a wiki layer that the LLM re-inscribes on top, and a schema layer of rules that governs both. Old layers stay legible underneath; new ones accumulate above.
 
 ## The problem
 
-Claude Code forgets between sessions. Obsidian remembers everything but curates nothing. You end up either pasting the same context into every conversation, or watching your vault grow into a junk drawer.
+LLM coding agents forget between sessions. Obsidian remembers everything but curates nothing. You end up either pasting the same context into every conversation, or watching your vault grow into a junk drawer.
 
-palimpsest sits between the two. Claude reads and writes your vault according to a strict protocol, so every session contributes to a structured, queryable knowledge base — and every future session can start with that knowledge already loaded.
+palimpsest sits between the two. The agent (Claude Code or GitHub Copilot in VS Code — same six commands, same vault, same rules) reads and writes your vault according to a strict protocol, so every session contributes to a structured, queryable knowledge base — and every future session can start with that knowledge already loaded.
 
 ## Architecture
 
@@ -18,7 +18,7 @@ Three layers, three owners.
 | --- | --- | --- | --- |
 | **Inputs** | `<vault>/raw/`, `<vault>/sessions/` | Human / LLM staging | Two staging areas. `raw/` is immutable external content (articles, PDFs, notes the human drops in). `sessions/` is `/save`'s output, awaiting ingestion. |
 | **Wiki** | `<vault>/wiki/` | LLM | Canonized knowledge. Topical notes only. The LLM owns quality. |
-| **Schema** | `~/.claude/CLAUDE.md` | Human | The rules, conventions, and vault path. |
+| **Schema** | `~/.claude/CLAUDE.md` (Claude Code) and/or `~/.copilot/instructions/palimpsest.instructions.md` (Copilot) | Human | The rules, conventions, and vault path. Same content for both agents. |
 
 `<vault>/log.md` lives at the vault root because it is audit metadata (operations journal), not knowledge.
 
@@ -80,23 +80,36 @@ cd palimpsest
 
 The installer:
 
-1. Detects existing Obsidian vaults (via `~/Library/Application Support/obsidian/obsidian.json`) — pick one or create a new vault.
-2. Creates the vault skeleton: `raw/{clippings,docs,notes}/`, `wiki/Daily/`, `wiki/index.md`, `wiki/log.md`.
-3. Installs 6 slash commands to `~/.claude/commands/` with your vault path baked in.
-4. Appends the palimpsest section to `~/.claude/CLAUDE.md` (or creates it).
-5. Adds `Read/Edit/Write` permissions for the vault to `~/.claude/settings.json`.
+1. Asks which agent(s) to set up: **Claude Code only**, **GitHub Copilot (VS Code) only**, or **both** (recommended).
+2. Detects existing Obsidian vaults (via `~/Library/Application Support/obsidian/obsidian.json`) — pick one or create a new vault.
+3. Creates the vault skeleton: `raw/{clippings,docs,notes}/`, `sessions/`, `wiki/{Context,Intelligence,Resources}/`, `wiki/index.md`, `log.md`.
+4. For **Claude Code**: installs the 6 slash commands to `~/.claude/commands/`, appends the palimpsest section to `~/.claude/CLAUDE.md`, adds `Read/Edit/Write` permissions for the vault to `~/.claude/settings.json`.
+5. For **GitHub Copilot**: installs the 6 prompt files to `~/.copilot/prompts/`, the schema to `~/.copilot/instructions/palimpsest.instructions.md`, and registers both folders in the VS Code user `settings.json` (`chat.promptFilesLocations`, `chat.instructionsFilesLocations`).
 6. Offers to `brew install --cask obsidian` if not present.
+
+The vault is shared: whichever agent runs `/save` writes to the same `sessions/`, whichever runs `/ingest` promotes into the same `wiki/`.
 
 ### Flags
 
 ```
 ./install.sh [OPTIONS]
 
-  --vault-path PATH    Skip interactive selection; install to PATH
-  --dry-run            Print actions, write nothing
-  --reinstall          Force backup-and-rewrite of all kit-owned files
-  -h, --help           Show usage
+  --vault-path PATH     Skip interactive vault selection; install to PATH
+  --target TARGET       Skip interactive target selection.
+                        TARGET ∈ {claude, copilot, both}
+  --dry-run             Print actions, write nothing
+  --reinstall           Force backup-and-rewrite of all kit-owned files
+  -h, --help            Show usage
 ```
+
+### Where files land
+
+| Agent | Schema (auto-loaded) | Slash commands |
+| --- | --- | --- |
+| Claude Code | `~/.claude/CLAUDE.md` (`## palimpsest` section) | `~/.claude/commands/<name>.md` |
+| GitHub Copilot (VS Code) | `~/.copilot/instructions/palimpsest.instructions.md` (`applyTo: '**'`) | `~/.copilot/prompts/<name>.prompt.md` |
+
+For Copilot, the installer adds `~/.copilot/prompts` and `~/.copilot/instructions` to VS Code's `chat.promptFilesLocations` and `chat.instructionsFilesLocations`. If your `settings.json` contains JSONC (comments, trailing commas), the installer prints the snippet to paste manually instead of corrupting the file.
 
 ## Vault layout
 
@@ -124,6 +137,9 @@ Run the installer twice and nothing breaks.
 | `~/.claude/commands/*.md` | Kit | Backup + overwrite when divergent |
 | `~/.claude/CLAUDE.md` (with `## palimpsest` marker, or legacy `## Second Brain vault`) | Kit | Skip; `--reinstall` strips and re-appends |
 | `~/.claude/CLAUDE.md` (without marker) | User | Append once, never overwrite |
+| `~/.copilot/prompts/*.prompt.md` | Kit | Backup + overwrite when divergent |
+| `~/.copilot/instructions/palimpsest.instructions.md` | Kit | Backup + overwrite when divergent |
+| VS Code `settings.json` (`chat.promptFilesLocations`, `chat.instructionsFilesLocations`) | Kit-managed entries | Backup + add palimpsest entries; falls back to a printed snippet if file is JSONC |
 | `<vault>/wiki/index.md` | User | Never touch |
 | `<vault>/log.md` | User | Append re-init entry only |
 | `<vault>/raw/**` | User | Never touch |
@@ -135,9 +151,10 @@ Backups go to `~/.claude/backups/palimpsest/<timestamp>/`.
 ## Requirements
 
 - macOS (Darwin)
-- Claude Code CLI installed and run at least once (`~/.claude/` must exist)
 - Python 3 (preinstalled on macOS)
 - Obsidian (the installer offers to brew-install if missing)
+- For the **Claude Code** target: Claude Code CLI installed and run at least once (`~/.claude/` must exist)
+- For the **Copilot** target: VS Code with GitHub Copilot Chat installed (the installer warns but does not block if VS Code is missing)
 
 ## Repo layout
 
@@ -155,6 +172,16 @@ palimpsest/
     │   ├── query.md
     │   ├── lint.md
     │   └── notebooklm.md
+    ├── copilot/                     # GitHub Copilot (VS Code) target
+    │   ├── instructions/
+    │   │   └── palimpsest.instructions.md
+    │   └── prompts/
+    │       ├── prime.prompt.md
+    │       ├── save.prompt.md
+    │       ├── ingest.prompt.md
+    │       ├── query.prompt.md
+    │       ├── lint.prompt.md
+    │       └── notebooklm.prompt.md
     └── vault/
         ├── log.md                   # seed for <vault>/log.md (only written if absent)
         └── wiki/
@@ -168,8 +195,16 @@ Templates use two placeholders rendered by `sed` at install time: `{{VAULT_PATH}
 There's no uninstall script — but the kit is well-bounded:
 
 ```bash
+# Claude Code
 rm ~/.claude/commands/{prime,save,ingest,query,lint,notebooklm}.md
 # Manually remove the "## palimpsest" section from ~/.claude/CLAUDE.md
+
+# GitHub Copilot (VS Code)
+rm -rf ~/.copilot/prompts ~/.copilot/instructions
+# Manually remove ~/.copilot/prompts and ~/.copilot/instructions entries from
+# ~/Library/Application Support/Code/User/settings.json
+# (chat.promptFilesLocations, chat.instructionsFilesLocations)
+
 # The vault itself stays where it is — your knowledge is yours.
 ```
 
