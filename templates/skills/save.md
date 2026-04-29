@@ -6,13 +6,24 @@ Captures the current session as a human-readable session recap. Run at the end o
 
 ## Steps
 
-### 1. Write or update the session file
+### 1. Detect the workspace
+
+Determine the workspace label from the current working directory. The label appears in every section header so a future reader can tell at a glance what the session was about.
+
+```bash
+git -C "$PWD" rev-parse --show-toplevel 2>/dev/null
+```
+
+- **Inside a git repository** → workspace = `basename` of the repo root (e.g. `palimpsest`, `apps`)
+- **Otherwise** → workspace = `global`
+
+Use exactly that label, lowercase, no spaces. No judgment calls — the detection is deterministic.
+
+### 2. Open or create the session file
 
 File: `<vault>/sessions/YYYY-MM-DD.md` (today's date).
 
-If the file already exists, append a new dated section at the bottom — never delete or rewrite earlier content from the same day.
-
-Frontmatter:
+If the file does not exist, create it with this frontmatter:
 
 ```yaml
 ---
@@ -24,60 +35,92 @@ ingested: false
 ---
 ```
 
+If the file already exists, leave the frontmatter and existing content untouched. Append the new entry at the bottom (after a single blank line of separation).
+
 The `ingested: false` flag marks the recap as awaiting promotion. `/ingest` flips it to a timestamp once processed.
 
-### 2. Content — six sections
+### 3. Write the entry
+
+Every entry follows the exact same structure. Consistency matters — `/ingest` and the human reader rely on it.
+
+```markdown
+## HH:MM — <workspace>
+
+### Context
+…
+
+### Goals
+…
+
+### Process & workflow
+…
+
+### Blockers & workarounds
+…
+
+### Decisions
+…
+
+### Learnings
+…
+```
+
+Rules for the structure:
+
+- **Header**: always `## HH:MM — <workspace>`. The time is the session's start time (or, if unknown, the time of `/save`). The workspace is the label from step 1.
+- **Sub-sections**: always H3, always in this order, always with these exact titles. Skip a section entirely (header included) if it has no content — never leave empty headers.
+- **No other top-level (`##`) headers inside the entry** — those are reserved for entry boundaries.
+
+### 4. Section content — what goes where
 
 Write the recap as a story a human can read in two minutes. Plain prose where prose helps, bullets where bullets help. No jargon, no copy-paste of code, no file diffs — `git log` already does that.
 
-If a section is empty, skip it rather than padding.
-
-#### 1. Context
+#### Context
 
 Where we started. What was already on the table coming into the session — the situation, the user need, the symptom that triggered the work. Frame it functionally, not technically.
 
-#### 2. Goals
+#### Goals
 
 What we set out to achieve in this session. One or two sentences, in plain language.
 
-#### 3. Process & workflow
+#### Process & workflow
 
 How we actually went about it. The path we took, the order we tackled things, the methods we used. Capture the *shape* of the session — was it linear, exploratory, iterative? Did we prototype, debate, then commit?
 
-#### 4. Blockers & workarounds
+#### Blockers & workarounds
 
 What slowed us down or stopped us. For each blocker, name what unblocked it (or what we're still waiting on). Dead ends and detours belong here.
 
-#### 5. Decisions
+#### Decisions
 
 What was settled and *why*. One line per decision. Capture the alternatives considered when the reasoning isn't obvious. If we deferred a decision, say so explicitly.
 
-#### 6. Learnings
+#### Learnings
 
 What we know now that we didn't going in. Surprises, mental-model shifts, assumptions invalidated, mechanisms understood. Avoid restating decisions — learnings are the things that will outlast this specific task.
 
-### 3. Multi-thread sessions
+### 5. Multiple distinct topics in a single session
 
-If the session covered several distinct problems, structure each thread under its own header (`## Thread name`) and place the six sections beneath. Don't mash unrelated threads into a single narrative.
+If the session covered two unrelated problems, write **two separate entries** — each with its own `## HH:MM — <workspace>` header, even if the timestamps are close. Do not nest threads under a single entry.
 
-### 4. Length
+### 6. Length
 
-Match the depth of the session. A short focused session yields a short note; a sprawling one yields a longer one. Don't artificially compress, don't pad.
+Match the depth of the session. A short focused session yields a short entry; a sprawling one yields a longer one. Don't artificially compress, don't pad.
 
-### 5. Write to the log
+### 7. Write to the log
 
 Append to `<vault>/log.md`:
 
 ```
-YYYY-MM-DD HH:MM — Save: session recap created/updated
+YYYY-MM-DD HH:MM — Save: session recap created/updated (workspace: <workspace>)
 ```
 
-### 6. Confirmation
+### 8. Confirmation
 
 Display a one-line summary:
 
 ```
-Saved → <vault>/sessions/YYYY-MM-DD.md (ingested: false)
+Saved → <vault>/sessions/YYYY-MM-DD.md  ## HH:MM — <workspace>  (ingested: false)
 ```
 
 ## Rules
@@ -86,4 +129,5 @@ Saved → <vault>/sessions/YYYY-MM-DD.md (ingested: false)
 - NEVER write technical fluff (file paths, diffs, raw command output) — sessions are for humans
 - NEVER touch `<vault>/raw/`
 - NEVER promote content to `Context/`, `Intelligence/`, or `Resources/` — that's `/ingest`'s job
+- NEVER deviate from the entry structure (H2 header, six H3 sub-sections in fixed order)
 - Execute directly without asking for confirmation
