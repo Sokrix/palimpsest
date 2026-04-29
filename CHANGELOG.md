@@ -13,7 +13,7 @@ The same six commands (`/prime`, `/save`, `/ingest`, `/query`, `/lint`, `/notebo
   Setup target?
     [1] Claude Code only
     [2] GitHub Copilot (VS Code) only
-    [3] Both (recommended)
+    [3] Both
   ```
   Or use `--target=claude|copilot|both` to skip the prompt.
 - New templates:

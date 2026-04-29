@@ -80,7 +80,7 @@ cd palimpsest
 
 The installer:
 
-1. Asks which agent(s) to set up: **Claude Code only**, **GitHub Copilot (VS Code) only**, or **both** (recommended).
+1. Asks which agent(s) to set up: **Claude Code only**, **GitHub Copilot (VS Code) only**, or **both**.
 2. Detects existing Obsidian vaults (via `~/Library/Application Support/obsidian/obsidian.json`) — pick one or create a new vault.
 3. Creates the vault skeleton: `raw/{clippings,docs,notes}/`, `sessions/`, `wiki/{Context,Intelligence,Resources}/`, `wiki/index.md`, `log.md`.
 4. For **Claude Code**: installs the 6 slash commands to `~/.claude/commands/`, appends the palimpsest section to `~/.claude/CLAUDE.md`, adds `Read/Edit/Write` permissions for the vault to `~/.claude/settings.json`.

@@ -84,7 +84,7 @@ resolve_target() {
   printf "Where should palimpsest be installed?\n"
   printf "  [1] Claude Code only\n"
   printf "  [2] GitHub Copilot (VS Code) only\n"
-  printf "  [3] Both (recommended)\n\n"
+  printf "  [3] Both\n\n"
   read -rp "Pick [1-3] (default 3): " choice
   case "${choice:-3}" in
     1) TARGET="claude" ;;
