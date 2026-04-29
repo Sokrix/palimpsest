@@ -176,7 +176,7 @@ backup_if_needed() {
 hdr "Summary — about to install"
 cat <<SUMMARY
   Vault path:       $VAULT_PATH
-  Skills target:    $HOME/.claude/commands/  (7 files)
+  Skills target:    $HOME/.claude/commands/  (6 files)
   Global config:    $HOME/.claude/CLAUDE.md  (append if marker absent)
   Permissions:      $HOME/.claude/settings.json  (Read/Edit/Write on vault)
   Backups (if any): $BACKUP_ROOT/
@@ -248,6 +248,18 @@ for f in "$REPO_DIR/templates/skills/"*.md; do
   skill_count=$((skill_count + 1))
 done
 ok "Installed/updated $skill_count skill(s); skipped $skipped already-current"
+
+# Migration: /compile was merged into /ingest. Clean up if it lingers from a prior install.
+LEGACY_COMPILE="$HOME/.claude/commands/compile.md"
+if [ -f "$LEGACY_COMPILE" ]; then
+  backup_if_needed "$LEGACY_COMPILE"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "  [dry-run] remove legacy $LEGACY_COMPILE"
+  else
+    rm "$LEGACY_COMPILE"
+  fi
+  warn "Removed legacy /compile skill (now merged into /ingest)"
+fi
 
 # ── Global CLAUDE.md ────────────────────────────────────────────────────
 hdr "Configuring global CLAUDE.md"
@@ -363,12 +375,11 @@ cat <<DONE
   3. Drop articles/PDFs/notes into the vault's raw/ folder, then /ingest
 
   Slash commands available globally from any Claude Code session:
-    /prime    Load vault context
-    /ingest   Compile raw/ → wiki/
-    /save     End-of-session checkpoint (light)
-    /compile  End-of-session checkpoint (deep, with topical notes)
-    /query    Search the wiki
-    /lint     Health check
+    /prime       Load vault context
+    /save        End-of-session human-readable recap (writes to Daily/)
+    /ingest      Canonicalize raw/ + Daily/ into Context / Intelligence / Resources
+    /query       Search the wiki
+    /lint        Health check
     /notebooklm  Generate multimedia from wiki
 
 DONE

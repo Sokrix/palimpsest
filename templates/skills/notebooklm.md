@@ -26,5 +26,6 @@ Deliverable file (MP3 / PDF / JSON / MD depending on type) dropped in `<vault>/w
 ## Rules
 
 - Never overwrite an existing deliverable without explicit confirmation
-- Always log the operation in `<vault>/wiki/Daily/{date}.md`
+- Always append a line to `<vault>/wiki/log.md` (`YYYY-MM-DD HH:MM — Notebooklm: <deliverable> generated from <N> sources`)
+- Never write to `<vault>/wiki/Daily/` — daily notes belong to `/save`
 - The sources passed to NotebookLM must be validated wiki notes (not from `<vault>/raw/`)

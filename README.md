@@ -26,46 +26,47 @@ Reads cross all layers. Writes are partitioned. The LLM cannot edit `raw/`. The 
 
 ```
 1. Drop a long article into <vault>/raw/clippings/
-   └─ /ingest
-      Claude reads the article, classifies it, writes one or more
-      structured notes in wiki/Intelligence/ or wiki/Resources/,
-      and links them into the index.
+   (it stays there — raw/ is immutable)
 
 2. Open a fresh Claude Code session in any project
    └─ /prime
-      Claude loads the wiki index and the relevant context notes.
+      Claude loads the wiki index and the latest daily note.
       You don't need to re-explain what you're working on.
 
 3. Have a deep working session — explore options, make decisions
-   └─ /compile
-      Claude writes topical notes for the durable knowledge AND
-      a daily note that is the functional narrative of the session:
-      what we did, why, what we explored, what we converged on,
-      what we learned, what blocked us.
+   └─ /save
+      Claude writes a human-readable daily recap covering
+      context, goals, process, blockers, decisions, learnings.
+      The daily lands in wiki/Daily/ flagged as not-yet-ingested.
 
-4. A week later, in a different project
+4. After a few sessions, when durable knowledge has accumulated
+   └─ /ingest
+      Claude scans raw/ and the un-ingested dailies, proposes a
+      promotion plan, and (after your OK) canonicalizes the
+      durable bits into Context / Intelligence / Resources.
+
+5. A week later, in a different project
    └─ /query "how did we decide on X?"
       Claude searches the wiki, cites sources, and reconstructs
       the reasoning from the daily note and the topical note.
 ```
 
-## The seven commands
+## The six commands
 
 | Command | Role |
 | --- | --- |
 | `/prime` | Load vault context at session start |
-| `/ingest` | Compile new files in `raw/` into structured wiki notes |
-| `/save` | End-of-session daily note (light) |
-| `/compile` | End-of-session topical wiki notes + daily narrative (deep) |
+| `/save` | End-of-session human-readable recap → `Daily/` |
+| `/ingest` | Canonicalize durable content from `raw/` and `Daily/` into Context / Intelligence / Resources |
 | `/query` | Search the wiki with citations |
 | `/lint` | Vault health-check (orphans, broken links, index drift) |
 | `/notebooklm` | Generate podcasts/mindmaps from wiki via NotebookLM |
 
-`/save` and `/compile` are mutually exclusive. Pick `/compile` when the session produced durable knowledge worth canonicalizing. Pick `/save` for a light checkpoint with nothing substantive to compile.
+`/save` and `/ingest` are complementary: `/save` runs every session and captures what happened; `/ingest` runs when accumulated dailies (or new files in `raw/`) deserve promotion to the topical buckets. Several `/save`s before a single `/ingest` is the normal cadence.
 
 ## Lineage
 
-The 3-layer architecture (raw / wiki / schema) is from [Andrej Karpathy's LLM Wiki](https://karpathy.ai). palimpsest operationalizes it as a memory layer **decoupled from your workspace**: one vault at a fixed absolute path, accessible from any Claude Code session in any directory. Knowledge accumulates centrally instead of fragmenting per-project. On top of that: seven slash commands, strict ownership rules baked in, a one-line installer, and a `/compile` daily note that captures the functional narrative of a session — context, exploration, convergence, learnings, blockers — not just a changelog of files.
+The 3-layer architecture (raw / wiki / schema) is from [Andrej Karpathy's LLM Wiki](https://karpathy.ai). palimpsest operationalizes it as a memory layer **decoupled from your workspace**: one vault at a fixed absolute path, accessible from any Claude Code session in any directory. Knowledge accumulates centrally instead of fragmenting per-project. On top of that: six slash commands, strict ownership rules baked in, a one-line installer, and a `/save` daily note that captures the functional narrative of a session — context, goals, process, blockers, decisions, learnings — not a changelog of files.
 
 ## Install
 
@@ -79,7 +80,7 @@ The installer:
 
 1. Detects existing Obsidian vaults (via `~/Library/Application Support/obsidian/obsidian.json`) — pick one or create a new vault.
 2. Creates the vault skeleton: `raw/{clippings,docs,notes}/`, `wiki/Daily/`, `wiki/index.md`, `wiki/log.md`.
-3. Installs 7 slash commands to `~/.claude/commands/` with your vault path baked in.
+3. Installs 6 slash commands to `~/.claude/commands/` with your vault path baked in.
 4. Appends the palimpsest section to `~/.claude/CLAUDE.md` (or creates it).
 5. Adds `Read/Edit/Write` permissions for the vault to `~/.claude/settings.json`.
 6. Offers to `brew install --cask obsidian` if not present.
@@ -143,11 +144,10 @@ palimpsest/
 ├── CHANGELOG.md
 └── templates/
     ├── CLAUDE.md                    # global config snippet appended to ~/.claude/CLAUDE.md
-    ├── skills/                      # 7 slash commands installed to ~/.claude/commands/
+    ├── skills/                      # 6 slash commands installed to ~/.claude/commands/
     │   ├── prime.md
-    │   ├── ingest.md
     │   ├── save.md
-    │   ├── compile.md
+    │   ├── ingest.md
     │   ├── query.md
     │   ├── lint.md
     │   └── notebooklm.md
@@ -163,7 +163,7 @@ Templates use two placeholders rendered by `sed` at install time: `{{VAULT_PATH}
 There's no uninstall script — but the kit is well-bounded:
 
 ```bash
-rm ~/.claude/commands/{prime,ingest,save,compile,query,lint,notebooklm}.md
+rm ~/.claude/commands/{prime,save,ingest,query,lint,notebooklm}.md
 # Manually remove the "## palimpsest" section from ~/.claude/CLAUDE.md
 # The vault itself stays where it is — your knowledge is yours.
 ```
