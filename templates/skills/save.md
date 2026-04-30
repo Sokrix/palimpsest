@@ -89,10 +89,10 @@ Every entry follows the exact same structure. Consistency matters — `/ingest` 
 ### Goals
 …
 
-### Process & workflow
+### Findings
 …
 
-### Blockers & workarounds
+### Open questions
 …
 
 ### Decisions
@@ -144,13 +144,23 @@ Where we started in product / user terms. The user need, the gap in the experien
 
 What we set out to achieve, framed as product outcomes. "Ship a way for users to look up a name by partial spelling" — not "implement the search ViewModel and wire it to the existing pipeline."
 
-#### Process & workflow
+#### Findings
 
-The *shape* of the session at the human level: how we framed the problem, how many design rounds we went through, what we prototyped versus argued about, what we mocked before building. Skip the implementation order, the file moves, the build steps. If a tool or technique genuinely shaped the direction (e.g. "we mocked it as static HTML before touching native code so we could iterate visually"), keep that sentence — it tells the story. Skip the rest.
+What the session actually established. The substantive output, in product / user / business terms: numbers and their shape, segments that moved, what's now true that wasn't before, what shipped, what the answer to the goal turned out to be. For an analysis: the cuts that matter, not the methodology. For a build: what users can now do. For a doc: what's now decided and where.
 
-#### Blockers & workarounds
+**Provenance rule — non-negotiable.** Only write here what the session itself **produced or confirmed**. If a claim, number, or pattern came from outside (another team's dashboard, a screenshot, a teammate's quote, a prior analysis) and was not independently verified during the session, it does **not** belong in `Findings` — it goes in `Open questions`. When in doubt, ask: *"Did we compute or confirm this here?"* If the answer is no, demote it. No extrapolation, no plausibility-based inference — report what was looked at, not what would sound right.
 
-Blockers worth recording are the ones that **changed the product trajectory** — a scale realization, a platform limitation that forced a redesign, a discovery about user behaviour. Pure technical bugs (decoder errors, concurrency warnings, missing imports) do not belong here. If the blocker reshaped the plan, write it that way: "we discovered the catalog is 10x larger than estimated, which forced us to abandon client-side search and go server-side." If it was just a thing that broke and got fixed, leave it out.
+Keep it functional, not technical: shape and direction of the answer, not query logic, schema details, or script names.
+
+#### Open questions
+
+What's unresolved at the end of the session and worth carrying forward. Three things land here:
+
+1. **Inputs we received but didn't validate** — claims from another dashboard, a screenshot, a teammate quote that weren't reconciled in-session. Attributed: *"the X dashboard shows Y; not yet aligned."*
+2. **Cuts we didn't run** — segments, time windows, breakdowns explicitly out of scope or deferred.
+3. **Trajectory shifts** — discoveries that changed the plan and left a follow-up: *"we found the catalog is 10× bigger than estimated, which forces a rethink before going further."*
+
+Pure technical bugs that got fixed in-session do not belong here. If it didn't reshape the work or leave a question hanging, leave it out.
 
 #### Decisions
 
@@ -158,7 +168,9 @@ What was settled and *why*, expressed in product / UX / business terms. "Removed
 
 #### Learnings
 
-What changed in your understanding of the **product, the user, the workflow, or the business** — not what you learned about the codebase or the platform. "Real-device screenshots catch design issues that mockups miss" is a workflow learning. "Auto-syncing iOS file groups remove the need for manual project edits" is platform trivia and does not belong. If the only learnings are technical, leave the section empty.
+What changed in your understanding of the **product, the user, the domain, or the business** — not the codebase, not the platform, not your own workflow. *"When two teams disagree on a volume, ask for the exact filter clause first"* is a domain learning that generalises. *"Auto-syncing iOS file groups remove manual project edits"* is platform trivia. *"Real-device screenshots catch design issues"* is workflow meta. Both are out.
+
+If the only learnings would be technical or workflow-flavoured, leave the section empty.
 
 ### 6. Multiple distinct topics in a single session
 
@@ -191,5 +203,7 @@ Saved → <vault>/sessions/YYYY-MM-DD.md  ## HH:MM — <workspace>  (ingested: f
 - NEVER touch `<vault>/raw/`
 - NEVER promote content to `Context/`, `Intelligence/`, or `Resources/` — that's `/ingest`'s job
 - NEVER deviate from the entry structure (H2 header, H3 sub-sections in fixed order)
+- ALWAYS write the recap in English, regardless of the session's working language. The vault is long-term memory — consistent language wins over fidelity to source
+- NEVER promote unverified inputs to `Findings` — claims from external dashboards, screenshots, or teammates that weren't independently confirmed during the session belong in `Open questions`, attributed
 - A short, sharp recap with no tech fluff beats a long, thorough one drowning in it. When in doubt, cut
 - Execute directly without asking for confirmation
