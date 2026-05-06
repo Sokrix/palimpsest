@@ -79,7 +79,7 @@ brew install palimpsest
 palimpsest install
 ```
 
-That's it. `palimpsest` is now on your PATH; `palimpsest install` runs the interactive setup (vault location, agent target, etc.).
+That's it. `palimpsest` is now on your PATH; `palimpsest install` runs the interactive setup (vault location, agent target, etc.). The formula lives at [Sokrix/homebrew-palimpsest](https://github.com/Sokrix/homebrew-palimpsest) — bumped on each release.
 
 ### From source (developers, or no Homebrew)
 
@@ -192,8 +192,6 @@ palimpsest/
 │   ├── banner.sh                    # ASCII banner
 │   ├── doctor.sh                    # `palimpsest doctor`
 │   └── uninstall.sh                 # `palimpsest uninstall`
-├── Formula/
-│   └── palimpsest.rb                # Homebrew formula
 ├── install.sh                       # interactive wizard (called by `palimpsest install`)
 ├── VERSION
 ├── LICENSE                          # Apache-2.0
