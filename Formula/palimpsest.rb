@@ -2,9 +2,7 @@ class Palimpsest < Formula
   desc "Persistent memory layer for Claude Code & GitHub Copilot, built on Obsidian"
   homepage "https://github.com/Sokrix/palimpsest"
   url "https://github.com/Sokrix/palimpsest/archive/refs/tags/v0.1.0.tar.gz"
-  # After tagging v0.1.0 on GitHub, compute with:
-  #   curl -sL https://github.com/Sokrix/palimpsest/archive/refs/tags/v0.1.0.tar.gz | shasum -a 256
-  sha256 "REPLACE_WITH_TARBALL_SHA256_AFTER_TAGGING"
+  sha256 "e89d5dd5fef79771453409f63fb1803d28aef81ab514f2b4b2bef90eff255c33"
   license "Apache-2.0"
 
   depends_on "python@3"
