@@ -69,6 +69,8 @@ ${BOLD}Slash commands available after install (Claude Code & Copilot):${NC}
   /ingest   Canonicalize raw/ and sessions/ into wiki buckets
   /query    Search the wiki
   /lint     Health-check the vault
+
+${DIM}Tip: CLI commands accept a leading slash too (e.g. \`palimpsest /doctor\`).${NC}
 HELP
   printf "\n"
   printf "  ${DIM}Docs:${NC} https://github.com/Sokrix/palimpsest\n\n"
@@ -154,6 +156,9 @@ if [ $# -eq 0 ]; then
 fi
 
 cmd="$1"; shift || true
+# Allow slash-prefixed commands (palimpsest /doctor) for symmetry with the
+# in-chat slash commands (/prime, /save, /ingest, /query, /lint).
+cmd="${cmd#/}"
 case "$cmd" in
   install)        cmd_install "$@" ;;
   reinstall)      cmd_reinstall "$@" ;;

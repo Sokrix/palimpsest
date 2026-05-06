@@ -2,6 +2,11 @@
 
 Notable changes to palimpsest. After upgrading, run `palimpsest reinstall` to pull updates into kit-owned files.
 
+## 0.1.1 — 2026-05-07 — Banner + slash-prefix CLI commands
+
+- New ASCII banner shown by `palimpsest version`/`help`/`install` — figlet "Standard" wordmark above a one-line tagline + version.
+- CLI commands now accept a leading slash (`palimpsest /doctor`, `palimpsest /install`, etc.) to mirror the in-chat slash commands. Both forms are equivalent.
+
 ## 0.1.0 — 2026-05-07 — `palimpsest` is now a real CLI, distributed via Homebrew
 
 palimpsest used to be a clone-and-run shell installer. It's now a proper command-line tool: `brew install palimpsest`, then `palimpsest install` runs the wizard. The clone path still works for development.
