@@ -2,6 +2,13 @@
 
 Notable changes to palimpsest. After upgrading, run `palimpsest reinstall` to pull updates into kit-owned files.
 
+## 0.1.2 — 2026-05-07 — Shell tab-completion (zsh + bash)
+
+- Type `palimpsest <TAB>` to see all subcommands and their descriptions, the standard CLI discovery UX (`gh`, `brew`, `kubectl` style).
+- Tab-complete subcommand flags: `palimpsest install --<TAB>` shows `--vault-path`, `--target`, `--dry-run`, `--reinstall`. `--target <TAB>` suggests `claude`, `copilot`, `both`. `--vault-path <TAB>` completes directory paths.
+- Slash prefix is honored: `palimpsest /install --<TAB>` works the same.
+- Homebrew automatically installs the completions on `brew install` / `brew upgrade`. Run `compinit` (zsh) or open a new shell to pick them up.
+
 ## 0.1.1 — 2026-05-07 — Banner + slash-prefix CLI commands
 
 - New ASCII banner shown by `palimpsest version`/`help`/`install` — figlet "Standard" wordmark above a one-line tagline + version.

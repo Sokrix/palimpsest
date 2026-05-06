@@ -1,0 +1,52 @@
+#compdef palimpsest
+# zsh completion for palimpsest. Installed by Homebrew to
+# /opt/homebrew/share/zsh/site-functions/_palimpsest
+
+_palimpsest() {
+  local context state state_descr line
+  typeset -A opt_args
+
+  _arguments -C \
+    '1: :->command' \
+    '*::arg:->args'
+
+  case $state in
+    command)
+      local -a commands
+      commands=(
+        'install:Run interactive setup (vault + skills/prompts)'
+        'reinstall:Re-run setup with --reinstall'
+        'uninstall:Remove installed skills and prompt files (vault preserved)'
+        'update:Update palimpsest itself (brew upgrade, or git pull in source mode)'
+        'upgrade:Alias for update'
+        'doctor:Health-check the install'
+        'status:Show install info: version, vault, target, mode'
+        'where:Print the vault path (pipeable)'
+        'version:Print the version'
+        'help:Show usage'
+      )
+      _describe -t commands 'palimpsest command' commands
+      ;;
+    args)
+      # Strip a leading slash so `palimpsest /install --<tab>` still works.
+      local cmd="${line[1]#/}"
+      case $cmd in
+        install|reinstall)
+          _arguments \
+            '--vault-path[Skip interactive vault selection]:path:_files -/' \
+            '--target[Target agent]:target:(claude copilot both)' \
+            '--dry-run[Print actions, write nothing]' \
+            '--reinstall[Force backup-and-rewrite of kit-owned files]' \
+            '(-h --help)'{-h,--help}'[Show help]'
+          ;;
+        uninstall)
+          _arguments \
+            '--dry-run[Print actions, do not remove]' \
+            '(-h --help)'{-h,--help}'[Show help]'
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_palimpsest "$@"
