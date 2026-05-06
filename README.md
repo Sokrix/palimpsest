@@ -67,9 +67,21 @@ Reads cross all layers. Writes are partitioned. The LLM cannot edit `raw/`. The 
 
 ## Lineage
 
-The 3-layer architecture (raw / wiki / schema) is from [Andrej Karpathy's LLM Wiki](https://karpathy.ai). palimpsest operationalizes it as a memory layer **decoupled from your workspace**: one vault at a fixed absolute path, accessible from any Claude Code session in any directory. Knowledge accumulates centrally instead of fragmenting per-project. On top of that: five slash commands, strict ownership rules baked in, a one-line installer, and a `/save` daily note that captures the functional narrative of a session — context, goals, process, blockers, decisions, learnings — not a changelog of files.
+The 3-layer architecture (raw / wiki / schema) is from [Andrej Karpathy's LLM Wiki](https://karpathy.ai). palimpsest operationalizes it as a memory layer **decoupled from your workspace**: one vault at a fixed absolute path, accessible from any Claude Code session in any directory. Knowledge accumulates centrally instead of fragmenting per-project. On top of that: five slash commands, strict ownership rules baked in, a Homebrew-installed CLI (`palimpsest install`), and a `/save` daily note that captures the functional narrative of a session — context, goals, process, blockers, decisions, learnings — not a changelog of files.
 
 ## Install
+
+### Homebrew (recommended)
+
+```bash
+brew tap Sokrix/palimpsest
+brew install palimpsest
+palimpsest install
+```
+
+That's it. `palimpsest` is now on your PATH; `palimpsest install` runs the interactive setup (vault location, agent target, etc.).
+
+### From source (developers, or no Homebrew)
 
 ```bash
 git clone https://github.com/Sokrix/palimpsest.git
@@ -77,29 +89,43 @@ cd palimpsest
 ./install.sh
 ```
 
-The installer:
+Either path runs the same wizard:
 
 1. Asks which agent(s) to set up: **Claude Code only**, **GitHub Copilot (VS Code) only**, or **both**.
 2. Detects existing Obsidian vaults (via `~/Library/Application Support/obsidian/obsidian.json`) — pick one or create a new vault.
 3. Creates the vault skeleton: `raw/{clippings,docs,notes}/`, `sessions/`, `wiki/{Context,Intelligence,Resources}/`, `wiki/index.md`, `log.md`.
-4. For **Claude Code**: installs the 6 slash commands to `~/.claude/commands/`, appends the palimpsest section to `~/.claude/CLAUDE.md`, adds `Read/Edit/Write` permissions for the vault to `~/.claude/settings.json`.
-5. For **GitHub Copilot**: installs the 6 prompt files to `~/.copilot/prompts/`, the schema to `~/.copilot/instructions/palimpsest.instructions.md`, and registers both folders in the VS Code user `settings.json` (`chat.promptFilesLocations`, `chat.instructionsFilesLocations`).
+4. For **Claude Code**: installs the slash commands to `~/.claude/commands/`, appends the palimpsest section to `~/.claude/CLAUDE.md`, adds `Read/Edit/Write` permissions for the vault to `~/.claude/settings.json`.
+5. For **GitHub Copilot**: installs the prompt files to `~/.copilot/prompts/`, the schema to `~/.copilot/instructions/palimpsest.instructions.md`, and registers both folders in the VS Code user `settings.json` (`chat.promptFilesLocations`, `chat.instructionsFilesLocations`).
 6. Offers to `brew install --cask obsidian` if not present.
 
 The vault is shared: whichever agent runs `/save` writes to the same `sessions/`, whichever runs `/ingest` promotes into the same `wiki/`.
 
-### Flags
+## CLI
+
+After install, the `palimpsest` command is on your PATH:
 
 ```
-./install.sh [OPTIONS]
+palimpsest <command> [options]
 
-  --vault-path PATH     Skip interactive vault selection; install to PATH
-  --target TARGET       Skip interactive target selection.
-                        TARGET ∈ {claude, copilot, both}
-  --dry-run             Print actions, write nothing
-  --reinstall           Force backup-and-rewrite of all kit-owned files
-  -h, --help            Show usage
+Commands:
+  install [opts]   Run the interactive setup (vault + skills/prompts)
+  reinstall        Re-run setup with --reinstall (force overwrite kit-owned files)
+  uninstall        Remove installed skills and prompt files (vault preserved)
+  update           Update palimpsest itself (brew upgrade, or git pull in source mode)
+  doctor           Health-check the install
+  status           Show install info: version, vault, target, mode
+  where            Print the vault path (pipeable: cd "$(palimpsest where)")
+  version          Print the version
+  help             Show usage
+
+install options:
+  --vault-path PATH    Skip interactive vault selection
+  --target TARGET      claude | copilot | both
+  --dry-run            Print actions, write nothing
+  --reinstall          Force backup-and-rewrite of kit-owned files
 ```
+
+`palimpsest update` upgrades the tool itself: when installed via Homebrew, it points at `brew upgrade palimpsest`; in source mode, it does `git pull` in the repo and re-runs the install wizard.
 
 ### Where files land
 
@@ -159,7 +185,18 @@ Backups go to `~/.claude/backups/palimpsest/<timestamp>/`.
 
 ```
 palimpsest/
-├── install.sh                       # entry point
+├── bin/
+│   └── palimpsest                   # CLI dispatcher (the user-facing entrypoint)
+├── lib/
+│   ├── common.sh                    # path resolution + log helpers + state IO
+│   ├── banner.sh                    # ASCII banner
+│   ├── doctor.sh                    # `palimpsest doctor`
+│   └── uninstall.sh                 # `palimpsest uninstall`
+├── Formula/
+│   └── palimpsest.rb                # Homebrew formula
+├── install.sh                       # interactive wizard (called by `palimpsest install`)
+├── VERSION
+├── LICENSE                          # Apache-2.0
 ├── README.md                        # this file
 ├── CHANGELOG.md
 └── templates/
@@ -189,26 +226,25 @@ Templates use two placeholders rendered by `sed` at install time: `{{VAULT_PATH}
 
 ## Uninstall
 
-There's no uninstall script — but the kit is well-bounded:
-
 ```bash
-# Claude Code
-rm ~/.claude/commands/{prime,save,ingest,query,lint}.md
-# Manually remove the "## palimpsest" section from ~/.claude/CLAUDE.md
-
-# GitHub Copilot (VS Code)
-rm -rf ~/.copilot/prompts ~/.copilot/instructions
-# Manually remove ~/.copilot/prompts and ~/.copilot/instructions entries from
-# ~/Library/Application Support/Code/User/settings.json
-# (chat.promptFilesLocations, chat.instructionsFilesLocations)
-
-# The vault itself stays where it is — your knowledge is yours.
+palimpsest uninstall
 ```
+
+This removes:
+
+- `~/.claude/commands/{prime,save,ingest,query,lint,notebooklm}.md`
+- `~/.copilot/prompts/*.prompt.md`
+- `~/.copilot/instructions/palimpsest.instructions.md`
+- `~/.palimpsest/state`
+
+It deliberately leaves your vault, `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, and the VS Code `settings.json` entries alone — your knowledge and editor config are yours. Edit those by hand if you want them gone.
+
+After `palimpsest uninstall`, remove the binary itself with `brew uninstall palimpsest` (or just delete the clone if you installed from source).
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for notable changes. Run `./install.sh --reinstall` to pull updates into kit-owned files.
+See [CHANGELOG.md](CHANGELOG.md) for notable changes. Run `palimpsest reinstall` to pull updates into kit-owned files after upgrading.
 
 ## License
 
-MIT
+[Apache 2.0](LICENSE)

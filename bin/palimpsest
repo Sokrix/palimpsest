@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+# palimpsest — CLI dispatcher.
+# Distributed via Homebrew (brew tap Sokrix/palimpsest) or runnable from a clone.
+
+set -euo pipefail
+
+# Homebrew rewrites this line via `inreplace` during `brew install` to point
+# at the Cellar's libexec/. In source mode it stays empty and lib/common.sh
+# probes for templates/ relative to the script's real path.
+PALIMPSEST_HOME_OVERRIDE=""
+
+# ── Locate lib/ and source helpers ──────────────────────────────────────
+# Resolve our own real path (works through ~/.local/bin and Cellar symlinks).
+_self="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$0")"
+_self_dir="$(cd "$(dirname "$_self")" && pwd)"
+
+# In source mode: bin/palimpsest → ../lib/common.sh
+# In brew mode: PALIMPSEST_HOME_OVERRIDE points to libexec/ which has lib/.
+if [ -n "$PALIMPSEST_HOME_OVERRIDE" ] && [ -f "$PALIMPSEST_HOME_OVERRIDE/lib/common.sh" ]; then
+  _lib="$PALIMPSEST_HOME_OVERRIDE/lib"
+elif [ -f "$_self_dir/../lib/common.sh" ]; then
+  _lib="$(cd "$_self_dir/../lib" && pwd)"
+else
+  echo "palimpsest: cannot locate lib/common.sh (looked next to $_self)" >&2
+  exit 1
+fi
+
+# shellcheck disable=SC1091
+. "$_lib/common.sh"
+# shellcheck disable=SC1091
+. "$_lib/banner.sh"
+
+# ── Subcommand implementations ──────────────────────────────────────────
+cmd_version() {
+  local sha
+  sha="$(read_git_sha)"
+  if [ -n "$sha" ]; then
+    printf "palimpsest v%s (%s, %s)\n" "$PALIMPSEST_VERSION" "$sha" "$PALIMPSEST_INSTALL_MODE"
+  else
+    printf "palimpsest v%s (%s)\n" "$PALIMPSEST_VERSION" "$PALIMPSEST_INSTALL_MODE"
+  fi
+}
+
+cmd_help() {
+  banner
+  cat <<HELP
+${BOLD}Usage:${NC} palimpsest <command> [options]
+
+${BOLD}Commands:${NC}
+  install [opts]   Run the interactive setup (vault + skills/prompts)
+  reinstall        Re-run setup with --reinstall (force overwrite kit-owned files)
+  uninstall        Remove installed skills and prompt files (vault preserved)
+  update           Update palimpsest itself (brew upgrade, or git pull in source mode)
+  doctor           Health-check the install
+  status           Show install info: version, vault, target, mode
+  where            Print the vault path (pipeable: cd "\$(palimpsest where)")
+  version          Print the version
+  help             Show this message
+
+${BOLD}install options:${NC}
+  --vault-path PATH    Skip interactive vault selection
+  --target TARGET      claude | copilot | both
+  --dry-run            Print actions, write nothing
+  --reinstall          Force backup-and-rewrite of kit-owned files
+
+${BOLD}Slash commands available after install (Claude Code & Copilot):${NC}
+  /prime    Load vault context at session start
+  /save     End-of-session human-readable recap
+  /ingest   Canonicalize raw/ and sessions/ into wiki buckets
+  /query    Search the wiki
+  /lint     Health-check the vault
+HELP
+  printf "\n"
+  printf "  ${DIM}Docs:${NC} https://github.com/Sokrix/palimpsest\n\n"
+}
+
+cmd_install() {
+  # Pass through to install.sh, which lives at $PALIMPSEST_HOME/install.sh in
+  # both source and brew modes.
+  export PALIMPSEST_INVOKED_BY_DISPATCHER=1
+  exec "$PALIMPSEST_HOME/install.sh" "$@"
+}
+
+cmd_reinstall() {
+  # Forward all args plus --reinstall.
+  cmd_install "$@" --reinstall
+}
+
+cmd_update() {
+  if [ "$PALIMPSEST_INSTALL_MODE" = "brew" ]; then
+    hdr "palimpsest update"
+    printf "  Installed via Homebrew. To update, run:\n\n"
+    printf "    ${BOLD}brew update && brew upgrade palimpsest${NC}\n\n"
+    printf "  Then optionally:  ${BOLD}palimpsest reinstall${NC}  to refresh the skills.\n\n"
+    return 0
+  fi
+
+  hdr "palimpsest update (source mode)"
+  if [ ! -d "$PALIMPSEST_HOME/.git" ]; then
+    err "Not a git checkout: $PALIMPSEST_HOME — cannot self-update."
+    err "Reinstall via Homebrew or pull manually."
+    return 1
+  fi
+  ( cd "$PALIMPSEST_HOME" && git pull --ff-only )
+  ok "Repository updated. Re-running install to apply any new templates…"
+  cmd_install
+}
+
+cmd_status() {
+  banner
+  hdr "Status"
+  printf "  Version:        %s\n" "$PALIMPSEST_VERSION"
+  local sha; sha="$(read_git_sha)"
+  [ -n "$sha" ] && printf "  Commit:         %s\n" "$sha"
+  printf "  Install mode:   %s\n" "$PALIMPSEST_INSTALL_MODE"
+  printf "  PALIMPSEST_HOME: %s\n" "$PALIMPSEST_HOME"
+  printf "\n"
+
+  if load_state; then
+    printf "  Vault path:     %s\n" "${PALIMPSEST_VAULT_PATH:-(unset)}"
+    printf "  Target(s):      %s\n" "${PALIMPSEST_TARGET:-(unset)}"
+    printf "  Installed at:   %s\n" "${PALIMPSEST_INSTALLED_AT:-(unset)}"
+  else
+    warn "Not yet installed — run 'palimpsest install' to set up the vault."
+  fi
+  printf "\n"
+}
+
+cmd_where() {
+  if load_state && [ -n "${PALIMPSEST_VAULT_PATH:-}" ]; then
+    printf "%s\n" "$PALIMPSEST_VAULT_PATH"
+    return 0
+  fi
+  err "Vault path not recorded. Run 'palimpsest install' first."
+  return 1
+}
+
+cmd_doctor() {
+  # shellcheck disable=SC1091
+  . "$_lib/doctor.sh"
+  doctor_main "$@"
+}
+
+cmd_uninstall() {
+  # shellcheck disable=SC1091
+  . "$_lib/uninstall.sh"
+  uninstall_main "$@"
+}
+
+# ── Dispatch ────────────────────────────────────────────────────────────
+if [ $# -eq 0 ]; then
+  cmd_help
+  exit 0
+fi
+
+cmd="$1"; shift || true
+case "$cmd" in
+  install)        cmd_install "$@" ;;
+  reinstall)      cmd_reinstall "$@" ;;
+  uninstall)      cmd_uninstall "$@" ;;
+  update|upgrade) cmd_update "$@" ;;
+  doctor)         cmd_doctor "$@" ;;
+  status)         cmd_status "$@" ;;
+  where)          cmd_where "$@" ;;
+  version|-v|--version) cmd_version ;;
+  help|-h|--help) cmd_help ;;
+  *)
+    err "Unknown command: $cmd"
+    printf "Run ${BOLD}palimpsest help${NC} for usage.\n" >&2
+    exit 1 ;;
+esac

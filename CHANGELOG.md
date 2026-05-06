@@ -1,6 +1,49 @@
 # Changelog
 
-Notable changes to palimpsest. Reinstall (`./install.sh --reinstall`) to pull in changes to kit-owned files.
+Notable changes to palimpsest. After upgrading, run `palimpsest reinstall` to pull updates into kit-owned files.
+
+## 0.1.0 — 2026-05-07 — `palimpsest` is now a real CLI, distributed via Homebrew
+
+palimpsest used to be a clone-and-run shell installer. It's now a proper command-line tool: `brew install palimpsest`, then `palimpsest install` runs the wizard. The clone path still works for development.
+
+### What's new
+
+- **Homebrew distribution** via self-tap:
+  ```bash
+  brew tap Sokrix/palimpsest
+  brew install palimpsest
+  palimpsest install
+  ```
+  Formula at `Formula/palimpsest.rb`. Installs the runtime under `libexec/` and a single `palimpsest` binary on PATH.
+- **CLI surface** — `bin/palimpsest` dispatches subcommands:
+  - `install` — interactive setup (delegates to `install.sh`)
+  - `reinstall` — install with `--reinstall`
+  - `uninstall` — remove kit-owned files (vault preserved)
+  - `update` — `brew upgrade palimpsest` (or `git pull` in source mode)
+  - `doctor` — health-check vault + skills + FDA
+  - `status` — version, install mode, vault, target
+  - `where` — print the vault path (pipeable)
+  - `version`, `help`
+- **Versioning**: `VERSION` file at the repo root, displayed by `palimpsest version` (with the git short-SHA in source mode).
+- **State file** at `~/.palimpsest/state` written by `install.sh` on success — lets the CLI find the vault path without re-prompting. Sourced by `where`/`status`/`doctor`/`uninstall`.
+- **Apache 2.0 license** added (`LICENSE`).
+- **Banner**: minimal two-line banner shown by `palimpsest version`/`help`/`install`.
+
+### Compatibility
+
+- `./install.sh` still works exactly as before — it's now also reachable as `palimpsest install`. No flags removed.
+- The `install.sh` end-of-run now writes `~/.palimpsest/state`. Existing installs gain the state file on next reinstall.
+- Existing slash commands and vault layout unchanged.
+
+### Migration
+
+If you installed palimpsest before 0.1.0, run once:
+
+```bash
+cd path/to/palimpsest && git pull
+brew tap Sokrix/palimpsest && brew install palimpsest   # optional — for `palimpsest` on PATH
+palimpsest reinstall                                    # writes the new state file, refreshes templates
+```
 
 ## 2026-04-30 — Multi-agent: palimpsest now installs for Claude Code and/or GitHub Copilot (VS Code)
 

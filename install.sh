@@ -706,3 +706,31 @@ cat <<'DONE'
     /lint        Health check
 
 DONE
+
+# ── CLI state file ──────────────────────────────────────────────────────
+# Written so `palimpsest where`, `palimpsest status`, `palimpsest doctor`
+# can find the vault without further configuration. Skipped in dry-run mode.
+if [ "$DRY_RUN" -eq 0 ]; then
+  PALIMPSEST_VERSION_FROM_FILE="unknown"
+  if [ -f "$REPO_DIR/VERSION" ]; then
+    PALIMPSEST_VERSION_FROM_FILE="$(head -n1 "$REPO_DIR/VERSION" | tr -d '[:space:]')"
+  fi
+  STATE_DIR="$HOME/.palimpsest"
+  STATE_FILE="$STATE_DIR/state"
+  mkdir -p "$STATE_DIR"
+  cat > "$STATE_FILE" <<EOF
+# palimpsest state — written by install.sh, read by the CLI.
+# Safe to delete; \`palimpsest install\` will recreate it.
+PALIMPSEST_VERSION="$PALIMPSEST_VERSION_FROM_FILE"
+PALIMPSEST_VAULT_PATH="$VAULT_PATH"
+PALIMPSEST_TARGET="$TARGET"
+PALIMPSEST_INSTALLED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+PALIMPSEST_REPO_DIR="$REPO_DIR"
+EOF
+  ok "Wrote CLI state → $STATE_FILE"
+fi
+
+# Hint when invoked via the dispatcher (palimpsest install vs ./install.sh).
+if [ "${PALIMPSEST_INVOKED_BY_DISPATCHER:-0}" = "1" ]; then
+  printf "\n  ${BOLD}Run \`palimpsest help\` for available commands.${NC}\n\n"
+fi
