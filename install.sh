@@ -233,12 +233,12 @@ hdr "Summary — about to install"
 printf "  Vault path:       %s\n" "$VAULT_PATH"
 printf "  Target:           %s\n" "$TARGET"
 if want_claude; then
-  printf "  Claude skills:    %s/.claude/commands/  (6 files)\n" "$HOME"
+  printf "  Claude skills:    %s/.claude/commands/  (5 files)\n" "$HOME"
   printf "  Claude config:    %s/.claude/CLAUDE.md  (append if marker absent)\n" "$HOME"
   printf "  Claude perms:     %s/.claude/settings.json  (Read/Edit/Write on vault)\n" "$HOME"
 fi
 if want_copilot; then
-  printf "  Copilot prompts:  %s/.copilot/prompts/  (6 files)\n" "$HOME"
+  printf "  Copilot prompts:  %s/.copilot/prompts/  (5 files)\n" "$HOME"
   printf "  Copilot config:   %s/.copilot/instructions/palimpsest.instructions.md\n" "$HOME"
   printf "  VS Code settings: %s/Library/Application Support/Code/User/settings.json (chat.{prompt,instructions}FilesLocations)\n" "$HOME"
 fi
@@ -704,6 +704,5 @@ cat <<'DONE'
     /ingest      Canonicalize raw/ + sessions/ into Context / Intelligence / Resources
     /query       Search the wiki
     /lint        Health check
-    /notebooklm  Generate multimedia from wiki
 
 DONE

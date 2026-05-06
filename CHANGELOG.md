@@ -4,7 +4,7 @@ Notable changes to palimpsest. Reinstall (`./install.sh --reinstall`) to pull in
 
 ## 2026-04-30 — Multi-agent: palimpsest now installs for Claude Code and/or GitHub Copilot (VS Code)
 
-The same six commands (`/prime`, `/save`, `/ingest`, `/query`, `/lint`, `/notebooklm`) are now available in **GitHub Copilot Chat in VS Code**, in addition to Claude Code. Both agents target the **same vault** at the **same path**, with the **same rules** — only the surface changes. The vault stays the single source of truth.
+The same five commands (`/prime`, `/save`, `/ingest`, `/query`, `/lint`) are now available in **GitHub Copilot Chat in VS Code**, in addition to Claude Code. Both agents target the **same vault** at the **same path**, with the **same rules** — only the surface changes. The vault stays the single source of truth.
 
 ### What's new
 
@@ -18,7 +18,7 @@ The same six commands (`/prime`, `/save`, `/ingest`, `/query`, `/lint`, `/notebo
   Or use `--target=claude|copilot|both` to skip the prompt.
 - New templates:
   - `templates/copilot/instructions/palimpsest.instructions.md` — schema with `applyTo: '**'`, auto-loaded into every Copilot chat. Mirrors `templates/CLAUDE.md`.
-  - `templates/copilot/prompts/{prime,save,ingest,query,lint,notebooklm}.prompt.md` — six prompt files mapping to slash commands. Bodies match the Claude Code skills.
+  - `templates/copilot/prompts/{prime,save,ingest,query,lint}.prompt.md` — five prompt files mapping to slash commands. Bodies match the Claude Code skills.
 - New install paths:
   - `~/.copilot/instructions/palimpsest.instructions.md`
   - `~/.copilot/prompts/<name>.prompt.md`
@@ -63,7 +63,7 @@ Running `./install.sh` (or `--reinstall`) on an existing install:
 - Moves `<vault>/wiki/log.md` to `<vault>/log.md` if the new location is absent.
 - Creates `sessions/` and the topical bucket folders explicitly (no longer relies on `wiki/Daily/`).
 
-`/save`, `/ingest`, `/prime`, `/lint`, `/query`, `/notebooklm` all updated to write/read from the new paths. `lint` now exempts `sessions/` from the orphan check (chronological, not part of the topical graph) and warns when the un-ingested session backlog grows beyond seven recaps.
+`/save`, `/ingest`, `/prime`, `/lint`, `/query` all updated to write/read from the new paths. `lint` now exempts `sessions/` from the orphan check (chronological, not part of the topical graph) and warns when the un-ingested session backlog grows beyond seven recaps.
 
 ## 2026-04-29 (later)
 

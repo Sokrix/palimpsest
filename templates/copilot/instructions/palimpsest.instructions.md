@@ -13,13 +13,13 @@ The user maintains a palimpsest vault (Obsidian + Karpathy 3-layer LLM Wiki arch
 
 In skill files and below, `<vault>` is shorthand for this absolute path.
 
-This vault is the user's persistent memory — decisions, research, projects, patterns, session recaps. Consult it when relevant. It is accessible from any session via the global skills (`/prime`, `/save`, `/ingest`, `/query`, `/lint`, `/notebooklm`).
+This vault is the user's persistent memory — decisions, research, projects, patterns, session recaps. Consult it when relevant. It is accessible from any session via the global skills (`/prime`, `/save`, `/ingest`, `/query`, `/lint`).
 
 ### Absolute rules (always)
 
 1. NEVER modify, rename or move a file in `<vault>/raw/` — it is the human space, immutable
 2. NEVER create an orphan note in `<vault>/wiki/{Context,Intelligence,Resources}/` — every topical note has at least one incoming or outgoing wiki link
-3. NEVER write in the vault outside a skill — direct edits to `<vault>/raw/`, `<vault>/sessions/`, or `<vault>/wiki/` are forbidden, even when explicitly asked. Route every write through `/save`, `/ingest`, or `/notebooklm`.
+3. NEVER write in the vault outside a skill — direct edits to `<vault>/raw/`, `<vault>/sessions/`, or `<vault>/wiki/` are forbidden, even when explicitly asked. Route every write through `/save` or `/ingest`.
 4. NEVER delete a wiki note — archive by changing `status: archive`
 5. NEVER invent information that is absent from the vault — flag when data is missing
 
@@ -66,7 +66,6 @@ This vault is the user's persistent memory — decisions, research, projects, pa
 | `/ingest`     | Canonicalize durable content from `raw/` and `sessions/` into the topical buckets | After dropping files in `raw/`, or when accumulated sessions deserve promotion |
 | `/query`      | Deep search across the wiki                                                     | To find information in the vault                                            |
 | `/lint`       | Health-check of the vault                                                       | Periodically (1x/week recommended)                                          |
-| `/notebooklm` | Vault → NotebookLM → multimedia deliverable                                     | To generate podcasts, mindmaps, guides from the wiki                        |
 
 `/save` and `/ingest` are complementary, not alternatives:
 - `/save` runs every session — it captures what happened.
@@ -146,6 +145,6 @@ Folders are created as needed. NEVER create an empty folder.
 
 ### Working from outside the vault
 
-The skills work from any session via the absolute paths above. You do not need to `cd` into the vault directory to invoke them. The same six commands are available in Claude Code and in GitHub Copilot (VS Code), and both write to the same vault following the same rules.
+The skills work from any session via the absolute paths above. You do not need to `cd` into the vault directory to invoke them. The same five commands are available in Claude Code and in GitHub Copilot (VS Code), and both write to the same vault following the same rules.
 
 If a session in another workspace produces wiki-worthy content, capture it via `/save` (it lands in `sessions/`) and let `/ingest` promote the durable bits later. `<vault>/raw/` is reserved for external artifacts (articles, PDFs, notes), not session output.
