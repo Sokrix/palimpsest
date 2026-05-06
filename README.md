@@ -8,7 +8,7 @@ A *palimpsest* is a manuscript scraped clean and reused, with traces of the olde
 
 LLM coding agents forget between sessions. Obsidian remembers everything but curates nothing. You end up either pasting the same context into every conversation, or watching your vault grow into a junk drawer.
 
-palimpsest sits between the two. The agent (Claude Code or GitHub Copilot in VS Code — same six commands, same vault, same rules) reads and writes your vault according to a strict protocol, so every session contributes to a structured, queryable knowledge base — and every future session can start with that knowledge already loaded.
+palimpsest sits between the two. The agent (Claude Code or GitHub Copilot in VS Code — same five commands, same vault, same rules) reads and writes your vault according to a strict protocol, so every session contributes to a structured, queryable knowledge base — and every future session can start with that knowledge already loaded.
 
 ## Architecture
 
@@ -53,7 +53,7 @@ Reads cross all layers. Writes are partitioned. The LLM cannot edit `raw/`. The 
       the reasoning from the daily note and the topical note.
 ```
 
-## The six commands
+## The five commands
 
 | Command | Role |
 | --- | --- |
@@ -62,13 +62,12 @@ Reads cross all layers. Writes are partitioned. The LLM cannot edit `raw/`. The 
 | `/ingest` | Canonicalize durable content from `raw/` and `Daily/` into Context / Intelligence / Resources |
 | `/query` | Search the wiki with citations |
 | `/lint` | Vault health-check (orphans, broken links, index drift) |
-| `/notebooklm` | Generate podcasts/mindmaps from wiki via NotebookLM |
 
 `/save` and `/ingest` are complementary: `/save` runs every session and captures what happened; `/ingest` runs when accumulated dailies (or new files in `raw/`) deserve promotion to the topical buckets. Several `/save`s before a single `/ingest` is the normal cadence.
 
 ## Lineage
 
-The 3-layer architecture (raw / wiki / schema) is from [Andrej Karpathy's LLM Wiki](https://karpathy.ai). palimpsest operationalizes it as a memory layer **decoupled from your workspace**: one vault at a fixed absolute path, accessible from any Claude Code session in any directory. Knowledge accumulates centrally instead of fragmenting per-project. On top of that: six slash commands, strict ownership rules baked in, a one-line installer, and a `/save` daily note that captures the functional narrative of a session — context, goals, process, blockers, decisions, learnings — not a changelog of files.
+The 3-layer architecture (raw / wiki / schema) is from [Andrej Karpathy's LLM Wiki](https://karpathy.ai). palimpsest operationalizes it as a memory layer **decoupled from your workspace**: one vault at a fixed absolute path, accessible from any Claude Code session in any directory. Knowledge accumulates centrally instead of fragmenting per-project. On top of that: five slash commands, strict ownership rules baked in, a one-line installer, and a `/save` daily note that captures the functional narrative of a session — context, goals, process, blockers, decisions, learnings — not a changelog of files.
 
 ## Install
 
@@ -165,13 +164,12 @@ palimpsest/
 ├── CHANGELOG.md
 └── templates/
     ├── CLAUDE.md                    # global config snippet appended to ~/.claude/CLAUDE.md
-    ├── skills/                      # 6 slash commands installed to ~/.claude/commands/
+    ├── skills/                      # 5 slash commands installed to ~/.claude/commands/
     │   ├── prime.md
     │   ├── save.md
     │   ├── ingest.md
     │   ├── query.md
-    │   ├── lint.md
-    │   └── notebooklm.md
+    │   └── lint.md
     ├── copilot/                     # GitHub Copilot (VS Code) target
     │   ├── instructions/
     │   │   └── palimpsest.instructions.md
@@ -180,8 +178,7 @@ palimpsest/
     │       ├── save.prompt.md
     │       ├── ingest.prompt.md
     │       ├── query.prompt.md
-    │       ├── lint.prompt.md
-    │       └── notebooklm.prompt.md
+    │       └── lint.prompt.md
     └── vault/
         ├── log.md                   # seed for <vault>/log.md (only written if absent)
         └── wiki/
@@ -196,7 +193,7 @@ There's no uninstall script — but the kit is well-bounded:
 
 ```bash
 # Claude Code
-rm ~/.claude/commands/{prime,save,ingest,query,lint,notebooklm}.md
+rm ~/.claude/commands/{prime,save,ingest,query,lint}.md
 # Manually remove the "## palimpsest" section from ~/.claude/CLAUDE.md
 
 # GitHub Copilot (VS Code)
