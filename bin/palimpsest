@@ -125,6 +125,7 @@ cmd_status() {
   else
     warn "Not yet installed — run 'palimpsest install' to set up the vault."
   fi
+  print_update_notice_if_newer
   printf "\n"
 }
 

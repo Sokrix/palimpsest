@@ -56,13 +56,17 @@ doctor_main() {
 
   # ── Summary ──────────────────────────────────────────────────────────
   hdr "Summary"
+  local rc=0
   if [ "$fail" -eq 0 ]; then
     ok "All checks passed."
-    return 0
   else
     err "$fail check(s) failed."
-    return 1
+    rc=1
   fi
+
+  # Friendly notice if a newer version is on GitHub. Cached 24h.
+  print_update_notice_if_newer
+  return $rc
 }
 
 doctor_check_vault_layout() {

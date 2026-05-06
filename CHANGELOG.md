@@ -2,6 +2,14 @@
 
 Notable changes to palimpsest. After upgrading, run `palimpsest reinstall` to pull updates into kit-owned files.
 
+## 0.1.3 — 2026-05-07 — Built-in update check
+
+- `palimpsest doctor` and `palimpsest status` now check GitHub for newer releases and print a friendly notice when a newer version exists. Brew users see "Run: brew upgrade palimpsest"; source-mode users see "Run: palimpsest update".
+- Result is cached at `~/.palimpsest/update-check` for 24 hours, so repeated invocations don't hit the GitHub API. Set `PALIMPSEST_NO_UPDATE_CHECK=1` to disable entirely (useful in CI).
+- Network failure is silent — if you're offline, the check is skipped and your command runs normally.
+- Uses GitHub's `/tags` API, not `/releases/latest`, so it works whether or not formal Releases have been published.
+- Internal: state file now writes `PALIMPSEST_INSTALLED_VERSION` instead of `PALIMPSEST_VERSION` to avoid colliding with the runtime version. Legacy state files are handled transparently.
+
 ## 0.1.2 — 2026-05-07 — Shell tab-completion (zsh + bash)
 
 - Type `palimpsest <TAB>` to see all subcommands and their descriptions, the standard CLI discovery UX (`gh`, `brew`, `kubectl` style).

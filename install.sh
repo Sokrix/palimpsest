@@ -721,7 +721,7 @@ if [ "$DRY_RUN" -eq 0 ]; then
   cat > "$STATE_FILE" <<EOF
 # palimpsest state — written by install.sh, read by the CLI.
 # Safe to delete; \`palimpsest install\` will recreate it.
-PALIMPSEST_VERSION="$PALIMPSEST_VERSION_FROM_FILE"
+PALIMPSEST_INSTALLED_VERSION="$PALIMPSEST_VERSION_FROM_FILE"
 PALIMPSEST_VAULT_PATH="$VAULT_PATH"
 PALIMPSEST_TARGET="$TARGET"
 PALIMPSEST_INSTALLED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"

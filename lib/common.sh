@@ -89,10 +89,16 @@ state_exists() {
 
 # Sources the state file into the current shell. After this call, the
 # PALIMPSEST_VAULT_PATH / PALIMPSEST_TARGET / etc. variables are available.
+#
+# Older state files (≤ 0.1.2) wrote PALIMPSEST_VERSION="<install-time version>"
+# which collides with the runtime VERSION. Preserve the runtime value across
+# the source so update-check still works on legacy state files.
 load_state() {
   if state_exists; then
+    local _runtime_version="$PALIMPSEST_VERSION"
     # shellcheck disable=SC1090
     . "$PALIMPSEST_STATE_FILE"
+    PALIMPSEST_VERSION="$_runtime_version"
     return 0
   fi
   return 1
@@ -108,11 +114,97 @@ write_state() {
   cat > "$PALIMPSEST_STATE_FILE" <<EOF
 # palimpsest state — written by install.sh, read by the CLI.
 # Safe to delete; \`palimpsest install\` will recreate it.
-PALIMPSEST_VERSION="$PALIMPSEST_VERSION"
+PALIMPSEST_INSTALLED_VERSION="$PALIMPSEST_VERSION"
 PALIMPSEST_VAULT_PATH="$vault"
 PALIMPSEST_TARGET="$target"
 PALIMPSEST_INSTALLED_AT="$now"
 PALIMPSEST_REPO_DIR="$repo"
 PALIMPSEST_INSTALL_MODE="$PALIMPSEST_INSTALL_MODE"
 EOF
+}
+
+# ── Update check ────────────────────────────────────────────────────────
+# Hits api.github.com once a day to see if a newer release exists.
+# Result is cached at ~/.palimpsest/update-check (epoch + version).
+# Honors PALIMPSEST_NO_UPDATE_CHECK=1 (skips silently). Network failure
+# is silent — the user's actual command still runs.
+
+PALIMPSEST_UPDATE_CACHE="$PALIMPSEST_STATE_DIR/update-check"
+PALIMPSEST_UPDATE_TTL=86400  # 24h
+
+# Print latest version (e.g. "0.1.3") to stdout, or empty on failure.
+check_latest_version() {
+  [ "${PALIMPSEST_NO_UPDATE_CHECK:-0}" = "1" ] && return 1
+
+  # Cache hit?
+  if [ -f "$PALIMPSEST_UPDATE_CACHE" ]; then
+    local cached_at cached_ver age
+    cached_at="$(sed -n '1p' "$PALIMPSEST_UPDATE_CACHE" 2>/dev/null)"
+    cached_ver="$(sed -n '2p' "$PALIMPSEST_UPDATE_CACHE" 2>/dev/null)"
+    if [ -n "$cached_at" ] && [ -n "$cached_ver" ]; then
+      age=$(( $(date "+%s") - cached_at ))
+      if [ "$age" -ge 0 ] && [ "$age" -lt "$PALIMPSEST_UPDATE_TTL" ]; then
+        printf '%s' "$cached_ver"
+        return 0
+      fi
+    fi
+  fi
+
+  # Cache miss — fetch from GitHub. Hard 3-second timeout so we don't hang.
+  # Using /tags rather than /releases/latest because the latter 404s when
+  # tags exist but no formal Release was published. Tags always work.
+  local latest
+  latest="$(curl -s --max-time 3 -H "Accept: application/vnd.github+json" \
+    "https://api.github.com/repos/Sokrix/palimpsest/tags?per_page=20" 2>/dev/null \
+    | python3 -c 'import json, re, sys
+try:
+  tags = json.load(sys.stdin)
+  if not isinstance(tags, list):
+    sys.exit(0)
+  vers = []
+  for t in tags:
+    n = t.get("name", "").lstrip("v")
+    if re.match(r"^\d+\.\d+\.\d+$", n):
+      vers.append(tuple(int(x) for x in n.split(".")))
+  if vers:
+    print(".".join(str(x) for x in max(vers)))
+except Exception:
+  pass' 2>/dev/null)"
+
+  [ -z "$latest" ] && return 1
+
+  mkdir -p "$PALIMPSEST_STATE_DIR"
+  printf '%s\n%s\n' "$(date "+%s")" "$latest" > "$PALIMPSEST_UPDATE_CACHE"
+  printf '%s' "$latest"
+}
+
+# version_gt A B → exit 0 if A > B (strict). Semver, three-part.
+version_gt() {
+  [ "$1" = "$2" ] && return 1
+  local IFS=.
+  local v1 v2 i
+  read -r -a v1 <<< "$1"
+  read -r -a v2 <<< "$2"
+  for i in 0 1 2; do
+    local a="${v1[i]:-0}" b="${v2[i]:-0}"
+    [ "$a" -gt "$b" ] 2>/dev/null && return 0
+    [ "$a" -lt "$b" ] 2>/dev/null && return 1
+  done
+  return 1
+}
+
+# Show a friendly notice if a newer version is available. No-op otherwise.
+print_update_notice_if_newer() {
+  local latest cmd
+  latest="$(check_latest_version)" || return 0
+  [ -z "$latest" ] && return 0
+  if version_gt "$latest" "$PALIMPSEST_VERSION"; then
+    if [ "$PALIMPSEST_INSTALL_MODE" = "brew" ]; then
+      cmd="brew upgrade palimpsest"
+    else
+      cmd="palimpsest update"
+    fi
+    printf "\n  ${YELLOW}🆕 palimpsest v%s is available${NC} ${DIM}(you have v%s)${NC}\n" "$latest" "$PALIMPSEST_VERSION"
+    printf "  Run: ${BOLD}%s${NC}\n" "$cmd"
+  fi
 }
